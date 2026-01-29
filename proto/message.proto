@@ -1,0 +1,12 @@
+package message;
+
+message ChatMessage {
+    optional string messageId = 4;
+    optional string userId = 1;
+    optional string text = 2;
+    optional int64 timestamp = 3;        
+}
+
+message ChatHistory {
+    repeated ChatMessage messages = 1;
+}
