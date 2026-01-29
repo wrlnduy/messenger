@@ -2,6 +2,7 @@ package chat
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -26,6 +27,7 @@ func PostMessage(hub *ws.Hub, store storage.StoreContext) http.HandlerFunc {
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(err.Error()))
+			return
 		}
 
 		msg := &message.ChatMessage{
@@ -37,7 +39,9 @@ func PostMessage(hub *ws.Hub, store storage.StoreContext) http.HandlerFunc {
 
 		err = store.Save(r.Context(), msg)
 		if err != nil {
-
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
 		data, _ := protojson.Marshal(msg)
