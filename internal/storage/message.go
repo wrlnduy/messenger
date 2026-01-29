@@ -5,7 +5,7 @@ import (
 )
 
 type Store interface {
-	Save(*messenger.ChatMessage)
-	List() []*messenger.ChatMessage
-	History() *messenger.ChatHistory
+	Save(*message.ChatMessage)
+	List() []*message.ChatMessage
+	History() *message.ChatHistory
 }

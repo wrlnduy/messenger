@@ -10,6 +10,7 @@ import (
 	"messenger/internal/ws"
 	"messenger/proto"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -27,7 +28,8 @@ func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
 			w.Write([]byte(err.Error()))
 		}
 
-		msg := &messenger.ChatMessage{
+		msg := &message.ChatMessage{
+			MessageId: proto.String(uuid.NewString()),
 			UserId:    proto.String(cookies.UserID(r)),
 			Text:      proto.String(req.Text),
 			Timestamp: proto.Int64(time.Now().Unix()),

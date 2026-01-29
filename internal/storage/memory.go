@@ -7,29 +7,29 @@ import (
 
 type MemoryStore struct {
 	sync.Mutex
-	messages []*messenger.ChatMessage
+	messages []*message.ChatMessage
 }
 
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{}
 }
 
-func (s *MemoryStore) Save(m *messenger.ChatMessage) {
+func (s *MemoryStore) Save(m *message.ChatMessage) {
 	s.Lock()
 	defer s.Unlock()
 
 	s.messages = append(s.messages, m)
 }
 
-func (s *MemoryStore) List() []*messenger.ChatMessage {
+func (s *MemoryStore) List() []*message.ChatMessage {
 	s.Lock()
 	defer s.Unlock()
 
-	return append([]*messenger.ChatMessage{}, s.messages...)
+	return append([]*message.ChatMessage{}, s.messages...)
 }
 
-func (s *MemoryStore) History() *messenger.ChatHistory {
-	return &messenger.ChatHistory{
+func (s *MemoryStore) History() *message.ChatHistory {
+	return &message.ChatHistory{
 		Messages: s.List(),
 	}
 }
