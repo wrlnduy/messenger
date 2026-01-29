@@ -3,7 +3,6 @@ package ws
 import (
 	"log"
 
-	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -15,12 +14,12 @@ type Client struct {
 	UserID string
 }
 
-func NewClient(hub *Hub, conn *websocket.Conn) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, userID string) *Client {
 	return &Client{
 		hub:    hub,
 		conn:   conn,
 		send:   make(chan []byte, 100),
-		UserID: uuid.NewString(),
+		UserID: userID,
 	}
 }
 
@@ -40,13 +39,24 @@ func (c *Client) ReadPump() {
 }
 
 func (c *Client) WritePump() {
-	defer c.conn.Close()
+	defer func() {
+		c.hub.unregister <- c
+		c.conn.Close()
+	}()
 
 	for msg := range c.send {
 		err := c.conn.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
 			log.Printf("User:%v failed on writing message: %v\n", c.UserID, err)
-			return
+			break
 		}
+	}
+}
+
+func (c *Client) PostMessage(msg []byte) {
+	select {
+	case c.send <- msg:
+	default:
+		c.hub.unregister <- c
 	}
 }

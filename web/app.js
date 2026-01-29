@@ -3,10 +3,26 @@ const chat = document.getElementById("chat");
 
 ws.onmessage = (e) => {
   const msg = JSON.parse(e.data);
+  const ts = new Date(msg.timestamp * 1000);
   const li = document.createElement("li");
-  li.innerText = `${msg.user_id}: ${msg.text} | ${new Date(msg.timestamp).toDateString()}/${new Date(msg.timestamp).toTimeString()}`;
+  li.innerText = `${msg.userId}: ${msg.text}\t ${ts.toDateString()} / ${ts.toTimeString()}`;
   chat.appendChild(li);
 };
+
+fetch("/history")
+  .then(res => {
+    if (!res.ok) throw new Error("HTTP error " + res.status);
+    return res.json();
+  })
+  .then(msgs => {
+    msgs.messages.forEach(msg => {
+      const ts = new Date(msg.timestamp * 1000);
+      const li = document.createElement("li");
+      li.innerText = `${msg.userId}: ${msg.text}\t ${ts.toDateString()} / ${ts.toTimeString()}`;
+      chat.appendChild(li);
+    });
+  })
+  .catch(err => console.error(err));
 
 function send() {
   const input = document.getElementById("input");

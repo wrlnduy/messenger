@@ -1,16 +1,11 @@
 package storage
 
 import (
-	"time"
+	"messenger/proto"
 )
 
-type Message struct {
-	UserID    string
-	Text      string
-	CreatedAt time.Time
-}
-
 type Store interface {
-	Save(Message)
-	List() []Message
+	Save(*messenger.ChatMessage)
+	List() []*messenger.ChatMessage
+	History() *messenger.ChatHistory
 }

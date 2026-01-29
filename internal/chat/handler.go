@@ -5,18 +5,17 @@ import (
 	"net/http"
 	"time"
 
+	"messenger/internal/cookies"
 	"messenger/internal/storage"
 	"messenger/internal/ws"
+	"messenger/proto"
+
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 type request struct {
 	Text string `json:"text"`
-}
-
-type response struct {
-	UserID    string `json:"user_id"`
-	Text      string `json:"text"`
-	Timestamp int64  `json:"timestamp"`
 }
 
 func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
@@ -28,21 +27,15 @@ func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
 			w.Write([]byte(err.Error()))
 		}
 
-		msg := storage.Message{
-			UserID:    "anon",
-			Text:      req.Text,
-			CreatedAt: time.Now(),
+		msg := &messenger.ChatMessage{
+			UserId:    proto.String(cookies.UserID(r)),
+			Text:      proto.String(req.Text),
+			Timestamp: proto.Int64(time.Now().Unix()),
 		}
 
 		store.Save(msg)
 
-		resp := response{
-			UserID:    msg.UserID,
-			Text:      msg.Text,
-			Timestamp: msg.CreatedAt.Unix(),
-		}
-
-		data, _ := json.Marshal(resp)
+		data, _ := protojson.Marshal(msg)
 		hub.Broadcast(data)
 
 		w.WriteHeader(http.StatusNoContent)
