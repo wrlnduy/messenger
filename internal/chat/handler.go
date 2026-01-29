@@ -19,7 +19,7 @@ type request struct {
 	Text string `json:"text"`
 }
 
-func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
+func PostMessage(hub *ws.Hub, store storage.StoreContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -35,7 +35,10 @@ func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
 			Timestamp: proto.Int64(time.Now().Unix()),
 		}
 
-		store.Save(msg)
+		err = store.Save(r.Context(), msg)
+		if err != nil {
+
+		}
 
 		data, _ := protojson.Marshal(msg)
 		hub.Broadcast(data)
