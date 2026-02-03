@@ -10,7 +10,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func RegisterRoutes(mux *http.ServeMux, hub *ws.Hub, store storage.StoreContext) {
+func RegisterRoutes(mux *http.ServeMux, hub *ws.Hub, store storage.Store) {
 	handler := http.NewServeMux()
 
 	handler.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
