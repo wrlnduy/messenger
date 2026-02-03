@@ -9,7 +9,7 @@ import (
 	"messenger/internal/cookies"
 	"messenger/internal/storage"
 	"messenger/internal/ws"
-	"messenger/proto"
+	message "messenger/proto"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -20,7 +20,7 @@ type request struct {
 	Text string `json:"text"`
 }
 
-func PostMessage(hub *ws.Hub, store storage.StoreContext) http.HandlerFunc {
+func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
 		err := json.NewDecoder(r.Body).Decode(&req)
