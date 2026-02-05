@@ -2,9 +2,14 @@ package cookies
 
 import "net/http"
 
-const UserIDCookie = "user_id"
+const (
+	SessionIDCookie = "session_id"
+)
 
-func UserID(r *http.Request) string {
-	c, _ := r.Cookie(UserIDCookie)
-	return c.Value
+func SessionID(r *http.Request) (string, bool) {
+	c, err := r.Cookie(SessionIDCookie)
+	if err != nil {
+		return "", false
+	}
+	return c.Value, true
 }

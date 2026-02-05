@@ -1,0 +1,8 @@
+package user;
+
+message user {
+    optional string userId = 1;
+    optional string username = 2;
+    optional bool isActive = 3;
+    optional bool isAdmin = 4 
+}

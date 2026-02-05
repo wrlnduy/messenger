@@ -1,0 +1,7 @@
+package session;
+
+message session {
+    optional string sessionId = 1;
+    optional string userId = 2;
+    optional timestamp expiresAt = 3;
+}
