@@ -3,5 +3,5 @@ CREATE TABLE IF NOT EXISTS chat_messages (
     user_id UUID NOT NULL REFERENCES users(user_id),
     
     text TEXT NOT NULL,
-    timestamp BIGINT NOT NULL
+    timestamp TIMESTAMP NOT NULL
 );

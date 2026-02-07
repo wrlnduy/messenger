@@ -2,25 +2,42 @@ package httpapi
 
 import (
 	"log"
+	"messenger/internal/auth"
 	"messenger/internal/chat"
 	"messenger/internal/storage"
 	"messenger/internal/ws"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-func RegisterRoutes(mux *http.ServeMux, hub *ws.Hub, store storage.Store) {
-	handler := http.NewServeMux()
+type Config struct {
+	Hub   *ws.Hub
+	Store storage.Store
+	Auth  *auth.Service
+}
 
-	handler.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws.ServeWS(hub, w, r)
+func RegisterRoutes(mux *mux.Router, config *Config) {
+	mux.Handle("/register", auth.RegisterHandler(config.Auth))
+
+	mux.Handle("/login", auth.LoginHandler(config.Auth))
+
+	logged := mux.PathPrefix("/logged").Subrouter()
+	RegisterWithAuthRoutes(logged, config)
+
+	mux.PathPrefix("/").Handler(http.FileServer(http.Dir("./web")))
+}
+
+func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ws.ServeWS(config.Hub, w, r)
 	})
 
-	handler.Handle("/message", chat.PostMessage(hub, store))
+	mux.Handle("/message", chat.PostMessage(config.Hub, config.Store))
 
-	handler.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
-		hist, err := store.History(r.Context())
+	mux.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
+		hist, err := config.Store.History(r.Context())
 		if err != nil {
 			log.Printf("History handler error: %v\n", err)
 		}
@@ -30,7 +47,7 @@ func RegisterRoutes(mux *http.ServeMux, hub *ws.Hub, store storage.Store) {
 		w.Write(data)
 	})
 
-	handler.Handle("/", http.FileServer(http.Dir("./web")))
-
-	mux.Handle("/", WithUser(handler))
+	mux.Use(func(next http.Handler) http.Handler {
+		return auth.WithAuth(next, config.Auth)
+	})
 }

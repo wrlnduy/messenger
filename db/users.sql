@@ -1,10 +1,10 @@
-CREATE TABLE IF NOT EXISTS users {
-    user_id UUID PRIMARY KEY
+CREATE TABLE IF NOT EXISTS users (
+    user_id UUID PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
 
-    is_active BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     is_admin BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at TIMESTAMP NOT NULL DEFAULT now()
-}
+);

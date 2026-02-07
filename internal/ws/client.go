@@ -3,6 +3,7 @@ package ws
 import (
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -11,10 +12,10 @@ type Client struct {
 	conn *websocket.Conn
 	send chan []byte
 
-	UserID string
+	UserID uuid.UUID
 }
 
-func NewClient(hub *Hub, conn *websocket.Conn, userID string) *Client {
+func NewClient(hub *Hub, conn *websocket.Conn, userID uuid.UUID) *Client {
 	return &Client{
 		hub:    hub,
 		conn:   conn,

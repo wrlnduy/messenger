@@ -1,4 +1,4 @@
-package message;
+package messenger;
 
 message ChatMessage {
     optional string messageId = 4;

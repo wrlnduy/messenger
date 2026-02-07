@@ -3,44 +3,25 @@ package storage
 import (
 	"context"
 	"database/sql"
-
-	"messenger/proto"
+	message "messenger/proto"
+	"time"
 
 	_ "github.com/lib/pq"
+	"google.golang.org/protobuf/proto"
 )
 
 type PostgresStore struct {
 	db *sql.DB
 }
 
-func NewPostgresStore(dsn string) (*PostgresStore, error) {
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	_, err = db.Exec(`
-	CREATE TABLE IF NOT EXISTS chat_messages (
-		message_id UUID PRIMARY KEY,
-		user_id UUID NOT NULL,
-		text TEXT NOT NULL,
-		timestamp BIGINT NOT NULL
-	)
-	`)
-	if err != nil {
-		return nil, err
-	}
-
+func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
 	return &PostgresStore{db: db}, nil
 }
 
 func (s *PostgresStore) Save(ctx context.Context, msg *message.ChatMessage) error {
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO chat_messages(message_id, user_id, text, timestamp) VALUES($1,$2,$3,$4)`,
-		msg.MessageId, msg.UserId, msg.Text, msg.Timestamp,
+		msg.MessageId, msg.UserId, msg.Text, time.Unix(*msg.Timestamp, 0),
 	)
 	return err
 }
@@ -55,9 +36,11 @@ func (s *PostgresStore) List(ctx context.Context) ([]*message.ChatMessage, error
 	var messages []*message.ChatMessage
 	for rows.Next() {
 		var msg message.ChatMessage
-		if err := rows.Scan(&msg.MessageId, &msg.UserId, &msg.Text, &msg.Timestamp); err != nil {
+		var t time.Time
+		if err := rows.Scan(&msg.MessageId, &msg.UserId, &msg.Text, &t); err != nil {
 			return nil, err
 		}
+		msg.Timestamp = proto.Int64(t.Unix())
 		messages = append(messages, &msg)
 	}
 	return messages, rows.Err()

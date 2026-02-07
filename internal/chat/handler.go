@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"messenger/internal/cookies"
+	"messenger/internal/auth"
 	"messenger/internal/storage"
 	"messenger/internal/ws"
 	message "messenger/proto"
@@ -30,9 +30,10 @@ func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
 			return
 		}
 
+		user := auth.UserWithCtx(r.Context())
 		msg := &message.ChatMessage{
 			MessageId: proto.String(uuid.NewString()),
-			UserId:    proto.String(cookies.UserID(r)),
+			UserId:    proto.String(*user.UserId),
 			Text:      proto.String(req.Text),
 			Timestamp: proto.Int64(time.Now().Unix()),
 		}

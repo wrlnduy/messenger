@@ -1,15 +1,21 @@
 package cookies
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/google/uuid"
+)
 
 const (
 	SessionIDCookie = "session_id"
 )
 
-func SessionID(r *http.Request) (string, bool) {
+func SessionID(r *http.Request) (uuid.UUID, bool) {
 	c, err := r.Cookie(SessionIDCookie)
 	if err != nil {
-		return "", false
+		return uuid.Nil, false
 	}
-	return c.Value, true
+
+	id, _ := uuid.Parse(c.Value)
+	return id, true
 }
