@@ -2,19 +2,22 @@ package httpapi
 
 import (
 	"messenger/internal/auth"
+	"messenger/internal/cache"
 	"messenger/internal/chat"
 	"messenger/internal/storage"
+	"messenger/internal/users"
 	"messenger/internal/ws"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type Config struct {
-	Hub   *ws.Hub
-	Store storage.Store
-	Auth  *auth.Service
+	Hub       *ws.Hub
+	Store     storage.Store
+	Auth      *auth.Service
+	Users     users.Store
+	UserCache *cache.UserCache
 }
 
 func RegisterRoutes(mux *mux.Router, config *Config) {
@@ -37,17 +40,7 @@ func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
 		ws.ServeWS(config.Hub, w, r)
 	})
 
-	mux.Handle("/message", chat.PostMessage(config.Hub, config.Store))
+	mux.Handle("/message", chat.PostMessage(config.Hub, config.Store, config.UserCache))
 
-	mux.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
-		hist, err := config.Store.History(r.Context())
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		data, _ := protojson.Marshal(hist)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(data)
-	})
+	mux.HandleFunc("/history", chat.History(config.Store, config.UserCache))
 }

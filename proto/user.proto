@@ -5,4 +5,5 @@ message user {
     optional string username = 2;
     optional bool isActive = 3;
     optional bool isAdmin = 4;
+    optional string passwordHash = 5;
 }

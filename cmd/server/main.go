@@ -6,9 +6,11 @@ import (
 	"os"
 
 	"messenger/internal/auth"
+	"messenger/internal/cache"
 	"messenger/internal/db"
 	"messenger/internal/httpapi"
 	"messenger/internal/storage"
+	"messenger/internal/users"
 	"messenger/internal/ws"
 
 	"github.com/gorilla/mux"
@@ -23,27 +25,45 @@ func main() {
 		log.Fatal("DATABASE_URL is not set")
 	}
 
-	db, err := db.New(dsn)
+	dbs, err := db.NewDb(dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	defer dbs.Close()
 
-	store, err := storage.NewPostgresStore(db)
+	rdb, err := db.NewRdb("REDIS_URL")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rdb.Close()
+
+	store, err := storage.NewPostgresStore(dbs)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	auth, err := auth.NewService(db)
+	users, err := users.NewPostgresStore(dbs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth, err := auth.NewService(dbs, users)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	userCache, err := cache.NewUserCache(rdb, users)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	mux := mux.NewRouter()
 	httpapi.RegisterRoutes(mux, &httpapi.Config{
-		Hub:   hub,
-		Store: store,
-		Auth:  auth,
+		Hub:       hub,
+		Store:     store,
+		Auth:      auth,
+		Users:     users,
+		UserCache: userCache,
 	})
 
 	log.Println("server started on :8080")

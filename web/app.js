@@ -51,7 +51,7 @@ function logout() {
 // --- CHAT ---
 
 function startChat() {
-  ws = new WebSocket(`ws://${window.location.host}/logged/ws`);
+  ws = new WebSocket(`wss://${window.location.host}/logged/ws`);
 
   ws.onmessage = e => {
     const msg = JSON.parse(e.data);
@@ -61,8 +61,12 @@ function startChat() {
   fetch("/logged/history")
     .then(res => res.json())
     .then(data => {
-      console.log(data);
-      data.messages.forEach(printMessage);
+      const users = data.mapping;
+
+      data.messages.forEach(msg => {
+        msg.username = users[msg.userId];
+        printMessage(msg);
+      });
     })
     .catch(err => console.error(err));
 }
@@ -84,7 +88,7 @@ function send() {
 function printMessage(msg) {
   const ts = new Date(msg.timestamp * 1000);
   const li = document.createElement("li");
-  li.innerText = `${msg.userId}: ${msg.text} (${ts.toLocaleString()})`;
+  li.innerText = `${msg.username}: ${msg.text} (${ts.toLocaleString()})`;
   chat.appendChild(li);
   li.scrollIntoView();
 }

@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"log"
 	"messenger/internal/cookies"
 	"net/http"
 )
@@ -20,8 +19,6 @@ func WithAuth(next http.Handler, auth *Service) http.Handler {
 			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
-
-		log.Printf("User %q has connected", *user.UserId)
 
 		ctx := context.WithValue(r.Context(), UserCtxKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))

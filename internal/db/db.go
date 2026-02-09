@@ -6,7 +6,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func New(dsn string) (*sql.DB, error) {
+func NewDb(dsn string) (*sql.DB, error) {
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return nil, err

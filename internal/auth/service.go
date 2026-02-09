@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
-	messenger "messenger/proto"
+	"messenger/internal/users"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,12 +22,14 @@ var (
 )
 
 type Service struct {
-	db *sql.DB
+	db    *sql.DB
+	users users.Store
 }
 
-func NewService(db *sql.DB) (*Service, error) {
+func NewService(db *sql.DB, users users.Store) (*Service, error) {
 	return &Service{
-		db: db,
+		db:    db,
+		users: users,
 	}, nil
 }
 
@@ -41,13 +43,7 @@ func (s *Service) Register(
 		return err
 	}
 
-	_, err = s.db.ExecContext(ctx,
-		`INSERT INTO users (user_id, username, password_hash) VALUES ($1, $2, $3)`,
-		uuid.New(),
-		username,
-		string(hash),
-	)
-	return err
+	return s.users.CreateUser(ctx, uuid.New(), username, string(hash))
 }
 
 func (s *Service) Login(
@@ -55,27 +51,17 @@ func (s *Service) Login(
 	username string,
 	password string,
 ) (uuid.UUID, error) {
-	var (
-		userId   uuid.UUID
-		hash     string
-		isActive bool
-	)
-
-	err := s.db.QueryRowContext(
-		ctx,
-		`SELECT user_id, password_hash, is_active FROM users WHERE username = $1`,
-		username,
-	).Scan(&userId, &hash, &isActive)
+	user, err := s.users.FindByUsername(ctx, username)
 
 	if err != nil {
 		return uuid.Nil, ErrInvalidCredentials
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(password)) != nil {
 		return uuid.Nil, ErrInvalidCredentials
 	}
 
-	if !isActive {
+	if !*user.IsActive {
 		return uuid.Nil, ErrUserNotActive
 	}
 
@@ -84,7 +70,7 @@ func (s *Service) Login(
 	_, err = s.db.ExecContext(
 		ctx,
 		`INSERT INTO sessions (session_id, user_id, expires_at) VALUES ($1, $2, $3)`,
-		sessionId, userId, time.Now().Add(sessionTime),
+		sessionId, *user.UserId, time.Now().Add(sessionTime),
 	)
 
 	return sessionId, err
@@ -93,8 +79,8 @@ func (s *Service) Login(
 func (s *Service) UserBySession(
 	ctx context.Context,
 	sessionId uuid.UUID,
-) (User, error) {
-	var u messenger.User
+) (*users.User, error) {
+	user := new(users.User)
 
 	log.Printf("Searching for user by sessionId: %v\n", sessionId)
 	err := s.db.QueryRowContext(
@@ -104,11 +90,11 @@ func (s *Service) UserBySession(
 		JOIN users u ON u.user_id = s.user_id
 		WHERE s.session_id = $1`,
 		sessionId,
-	).Scan(&u.UserId, &u.Username, &u.IsActive, &u.IsAdmin)
+	).Scan(&user.UserId, &user.Username, &user.IsActive, &user.IsAdmin)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &u, err
+	return user, err
 }

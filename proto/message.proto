@@ -4,9 +4,11 @@ message ChatMessage {
     optional string messageId = 4;
     optional string userId = 1;
     optional string text = 2;
-    optional int64 timestamp = 3;        
+    optional int64 timestamp = 3;
+    optional string username = 5;         
 }
 
 message ChatHistory {
     repeated ChatMessage messages = 1;
+    map<string, string> mapping = 2;
 }
