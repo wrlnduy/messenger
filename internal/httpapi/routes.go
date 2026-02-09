@@ -1,36 +1,50 @@
 package httpapi
 
 import (
-	"log"
+	"messenger/internal/auth"
+	"messenger/internal/cache"
 	"messenger/internal/chat"
+	"messenger/internal/sessions"
 	"messenger/internal/storage"
+	"messenger/internal/users"
 	"messenger/internal/ws"
 	"net/http"
 
-	"google.golang.org/protobuf/encoding/protojson"
+	"github.com/gorilla/mux"
 )
 
-func RegisterRoutes(mux *http.ServeMux, hub *ws.Hub, store storage.Store) {
-	handler := http.NewServeMux()
+type Config struct {
+	Hub       *ws.Hub
+	Store     storage.Store
+	Auth      *auth.Service
+	Users     users.Store
+	Sessions  sessions.Store
+	UserCache *cache.UserCache
+}
 
-	handler.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws.ServeWS(hub, w, r)
+func RegisterRoutes(mux *mux.Router, config *Config) {
+	mux.Handle("/register", auth.RegisterHandler(config.Auth))
+
+	mux.Handle("/login", auth.LoginHandler(config.Auth))
+
+	mux.Handle("/logout", auth.LogoutHandler(config.Auth))
+
+	logged := mux.PathPrefix("/logged").Subrouter()
+	RegisterWithAuthRoutes(logged, config)
+
+	mux.PathPrefix("/").Handler(http.FileServer(http.Dir("./web")))
+}
+
+func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
+	mux.Use(func(next http.Handler) http.Handler {
+		return auth.WithAuth(next, config.Auth)
 	})
 
-	handler.Handle("/message", chat.PostMessage(hub, store))
-
-	handler.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
-		hist, err := store.History(r.Context())
-		if err != nil {
-			log.Printf("History handler error: %v\n", err)
-		}
-
-		data, _ := protojson.Marshal(hist)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write(data)
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ws.ServeWS(config.Hub, w, r)
 	})
 
-	handler.Handle("/", http.FileServer(http.Dir("./web")))
+	mux.Handle("/message", chat.PostMessage(config.Hub, config.Store, config.UserCache))
 
-	mux.Handle("/", WithUser(handler))
+	mux.HandleFunc("/history", chat.History(config.Store, config.UserCache))
 }

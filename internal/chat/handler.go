@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"messenger/internal/cookies"
+	"messenger/internal/auth"
+	"messenger/internal/cache"
 	"messenger/internal/storage"
 	"messenger/internal/ws"
 	message "messenger/proto"
@@ -20,7 +21,7 @@ type request struct {
 	Text string `json:"text"`
 }
 
-func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
+func PostMessage(hub *ws.Hub, store storage.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -30,9 +31,10 @@ func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
 			return
 		}
 
+		user := auth.UserWithCtx(r.Context())
 		msg := &message.ChatMessage{
 			MessageId: proto.String(uuid.NewString()),
-			UserId:    proto.String(cookies.UserID(r)),
+			UserId:    proto.String(*user.UserId),
 			Text:      proto.String(req.Text),
 			Timestamp: proto.Int64(time.Now().Unix()),
 		}
@@ -44,9 +46,33 @@ func PostMessage(hub *ws.Hub, store storage.Store) http.HandlerFunc {
 			return
 		}
 
+		userId, _ := uuid.Parse(*user.UserId)
+		username, err := cache.GetUsername(r.Context(), userId)
+		msg.Username = proto.String(username)
+
 		data, _ := protojson.Marshal(msg)
 		hub.Broadcast(data)
 
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func History(store storage.Store, cache *cache.UserCache) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hist, err := store.History(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err = FillMapping(r.Context(), hist, cache)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		data, _ := protojson.Marshal(hist)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
 	}
 }

@@ -1,7 +1,7 @@
 package ws
 
 import (
-	"messenger/internal/cookies"
+	"messenger/internal/auth"
 	"net/http"
 	"time"
 
@@ -19,7 +19,7 @@ func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := NewClient(hub, conn, cookies.UserID(r))
+	client := NewClient(hub, conn, auth.UserIdWithCtx(r.Context()))
 	hub.register <- client
 
 	go client.ReadPump()

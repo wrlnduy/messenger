@@ -1,35 +1,125 @@
-const ws = new WebSocket("ws://localhost:8080/ws");
-const chat = document.getElementById("chat");
+let ws = null;
+let chat = null;
+const authUI = document.getElementById("auth-ui");
+const authError = document.getElementById("auth-error");
 
-ws.onmessage = (e) => {
-  const msg = JSON.parse(e.data);
-  printMessage(msg);
-};
+// --- AUTH ---
 
-fetch("/history")
-  .then(res => {
-    if (!res.ok) throw new Error("HTTP error " + res.status);
-    return res.json();
+function login() {
+  const usernameInput = document.getElementById("login-username");
+  const passwordInput = document.getElementById("login-password");
+
+  const username = usernameInput.value;
+  const password = passwordInput.value;
+
+  passwordInput.value = "";
+  passwordInput.type = "password";
+
+  fetch("/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
   })
-  .then(msgs => {
-    msgs.messages.forEach(msg => {
-      printMessage(msg);
+    .then(checkStatus)
+    .then(() => {
+      window.location.href = "/logged";
+    })
+    .catch(err => showError(err));
+}
+
+function register() {
+  const usernameInput = document.getElementById("reg-username");
+  const passwordInput = document.getElementById("reg-password");
+
+  const username = usernameInput.value;
+  const password = passwordInput.value;
+
+  passwordInput.value = "";
+  passwordInput.type = "password";
+
+  fetch("/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  })
+    .then(checkStatus)
+    .then(() => {
+      alert("Registered!");
+    })
+    .catch(err => showError(err));
+}
+
+function togglePassword(id) {
+  const input = document.getElementById(id);
+  input.type = input.type === "password" ? "text" : "password";
+}
+
+function logout() {
+  fetch("/logout", { method: "POST" })
+    .finally(() => {
+      ws?.close();
+      ws = null;
+      chat.innerHTML = "";
+      chatUI.style.display = "none";
+      authUI.style.display = "block";
+      window.location.href = "/";
     });
-  })
-  .catch(err => console.error(err));
+}
+
+// --- CHAT ---
+
+function startChat() {
+  ws = new WebSocket(`wss://${window.location.host}/logged/ws`);
+
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    printMessage(msg);
+  };
+
+  fetch("/logged/history")
+    .then(res => res.json())
+    .then(data => {
+      const users = data.mapping;
+
+      data.messages.forEach(msg => {
+        msg.username = users[msg.userId];
+        printMessage(msg);
+      });
+    })
+    .catch(err => console.error(err));
+}
 
 function send() {
   const input = document.getElementById("input");
-  fetch("/message", {
+  const text = input.value.trim();
+  if (!text) return;
+
+  fetch("/logged/message", {
     method: "POST",
-    body: JSON.stringify({ text: input.value }),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
   });
+
   input.value = "";
 }
 
 function printMessage(msg) {
   const ts = new Date(msg.timestamp * 1000);
   const li = document.createElement("li");
-  li.innerText = `${msg.userId}: ${msg.text}\t ${ts.toDateString()} / ${ts.toTimeString()}`;
+  li.innerText = `${msg.username}: ${msg.text} (${ts.toLocaleString()})`;
   chat.appendChild(li);
+  li.scrollIntoView();
+}
+
+// --- HELPERS ---
+
+function checkStatus(res) {
+  if (!res.ok) {
+    return res.text().then(text => { throw new Error(text || "Error"); });
+  }
+  return res;
+}
+
+function showError(err) {
+  authError.innerText = err.message;
 }

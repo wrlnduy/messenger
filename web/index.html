@@ -3,11 +3,38 @@
 <head>
   <meta charset="utf-8" />
   <title>Messenger</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #chat-ui { display: none; }
+    #chat { list-style: none; padding-left: 0; }
+    #chat li { margin-bottom: 5px; }
+    #auth-error { color: red; }
+  </style>
 </head>
 <body>
-  <ul id="chat"></ul>
-  <input id="input" placeholder="message..." />
-  <button onclick="send()">Send</button>
+
+  <!-- AUTH -->
+  <div id="auth-ui">
+    <h2>Login</h2>
+    <input id="login-username" placeholder="Username" />
+    <input id="login-password" type="password" placeholder="Password" />
+    <label>
+      <input type="checkbox" onclick="togglePassword('login-password')">
+      Show password
+    </label>
+    <button onclick="login()">Login</button>
+
+    <h2>Register</h2>
+    <input id="reg-username" placeholder="Username" />
+    <input id="reg-password" type="password" placeholder="Password" />
+    <label>
+      <input type="checkbox" onclick="togglePassword('reg-password')">
+      Show password
+    </label>
+    <button onclick="register()">Register</button>
+
+    <p id="auth-error"></p>
+  </div>
 
   <script src="app.js"></script>
 </body>
