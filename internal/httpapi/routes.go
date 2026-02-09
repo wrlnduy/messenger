@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"log"
 	"messenger/internal/auth"
 	"messenger/internal/chat"
 	"messenger/internal/storage"
@@ -30,6 +29,10 @@ func RegisterRoutes(mux *mux.Router, config *Config) {
 }
 
 func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
+	mux.Use(func(next http.Handler) http.Handler {
+		return auth.WithAuth(next, config.Auth)
+	})
+
 	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		ws.ServeWS(config.Hub, w, r)
 	})
@@ -39,15 +42,12 @@ func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
 	mux.HandleFunc("/history", func(w http.ResponseWriter, r *http.Request) {
 		hist, err := config.Store.History(r.Context())
 		if err != nil {
-			log.Printf("History handler error: %v\n", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
 		}
 
 		data, _ := protojson.Marshal(hist)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
-	})
-
-	mux.Use(func(next http.Handler) http.Handler {
-		return auth.WithAuth(next, config.Auth)
 	})
 }

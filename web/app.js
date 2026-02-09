@@ -1,5 +1,5 @@
 let ws = null;
-const chat = document.getElementById("chat");
+let chat = null;
 const authUI = document.getElementById("auth-ui");
 const authError = document.getElementById("auth-error");
 
@@ -16,7 +16,7 @@ function login() {
   })
     .then(checkStatus)
     .then(() => {
-      window.location.href = "/logged.html";
+      window.location.href = "/logged";
     })
     .catch(err => showError(err));
 }
@@ -60,7 +60,10 @@ function startChat() {
 
   fetch("/logged/history")
     .then(res => res.json())
-    .then(data => data.messages.forEach(printMessage))
+    .then(data => {
+      console.log(data);
+      data.messages.forEach(printMessage);
+    })
     .catch(err => console.error(err));
 }
 
