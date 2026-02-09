@@ -16,6 +16,8 @@ function login() {
   })
     .then(checkStatus)
     .then(() => {
+      password.value = "";
+      password.type = "password";
       window.location.href = "/logged";
     })
     .catch(err => showError(err));
@@ -32,9 +34,16 @@ function register() {
   })
     .then(checkStatus)
     .then(() => {
+      password.value = "";
+      password.type = "password";
       alert("Registered! Wait for admin approval.");
     })
     .catch(err => showError(err));
+}
+
+function togglePassword(id) {
+  const input = document.getElementById(id);
+  input.type = input.type === "password" ? "text" : "password";
 }
 
 function logout() {
