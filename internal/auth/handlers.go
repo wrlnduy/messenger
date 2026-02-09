@@ -59,3 +59,30 @@ func LoginHandler(auth *Service) http.Handler {
 		w.WriteHeader(http.StatusOK)
 	})
 }
+
+func LogoutHandler(auth *Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessionId, ok := cookies.SessionID(r)
+		if !ok {
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     cookies.SessionIDCookie,
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   0,
+		})
+
+		err := auth.sessions.EndSession(r.Context(), sessionId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		log.Printf("SessionId %q has been ended\n", sessionId)
+
+		w.WriteHeader(http.StatusOK)
+	})
+}

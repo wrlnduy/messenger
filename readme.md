@@ -2,7 +2,6 @@
 
 ### Требования
 - Docker и Docker Compose
-- Или: Go 1.23+, PostgreSQL 16
 
 ### Развёртывание с Docker Compose
 

@@ -9,6 +9,7 @@ import (
 	"messenger/internal/cache"
 	"messenger/internal/db"
 	"messenger/internal/httpapi"
+	"messenger/internal/sessions"
 	"messenger/internal/storage"
 	"messenger/internal/users"
 	"messenger/internal/ws"
@@ -47,7 +48,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	auth, err := auth.NewService(dbs, users)
+	sessions, err := sessions.NewPostgresStore(dbs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	auth, err := auth.NewService(dbs, users, sessions)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,6 +69,7 @@ func main() {
 		Store:     store,
 		Auth:      auth,
 		Users:     users,
+		Sessions:  sessions,
 		UserCache: userCache,
 	})
 

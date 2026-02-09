@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"messenger/internal/sessions"
 	"messenger/internal/users"
 	"time"
 
@@ -22,14 +23,16 @@ var (
 )
 
 type Service struct {
-	db    *sql.DB
-	users users.Store
+	db       *sql.DB
+	users    users.Store
+	sessions sessions.Store
 }
 
-func NewService(db *sql.DB, users users.Store) (*Service, error) {
+func NewService(db *sql.DB, users users.Store, sessions sessions.Store) (*Service, error) {
 	return &Service{
-		db:    db,
-		users: users,
+		db:       db,
+		users:    users,
+		sessions: sessions,
 	}, nil
 }
 
@@ -65,15 +68,13 @@ func (s *Service) Login(
 		return uuid.Nil, ErrUserNotActive
 	}
 
-	sessionId := uuid.New()
+	userId, _ := uuid.Parse(*user.UserId)
+	sessionId, err := s.sessions.NewSession(ctx, userId, time.Now().Add(sessionTime))
+	if err != nil {
+		return uuid.Nil, err
+	}
 
-	_, err = s.db.ExecContext(
-		ctx,
-		`INSERT INTO sessions (session_id, user_id, expires_at) VALUES ($1, $2, $3)`,
-		sessionId, *user.UserId, time.Now().Add(sessionTime),
-	)
-
-	return sessionId, err
+	return sessionId, nil
 }
 
 func (s *Service) UserBySession(

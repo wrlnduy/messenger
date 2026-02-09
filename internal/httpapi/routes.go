@@ -4,6 +4,7 @@ import (
 	"messenger/internal/auth"
 	"messenger/internal/cache"
 	"messenger/internal/chat"
+	"messenger/internal/sessions"
 	"messenger/internal/storage"
 	"messenger/internal/users"
 	"messenger/internal/ws"
@@ -17,6 +18,7 @@ type Config struct {
 	Store     storage.Store
 	Auth      *auth.Service
 	Users     users.Store
+	Sessions  sessions.Store
 	UserCache *cache.UserCache
 }
 
@@ -24,6 +26,8 @@ func RegisterRoutes(mux *mux.Router, config *Config) {
 	mux.Handle("/register", auth.RegisterHandler(config.Auth))
 
 	mux.Handle("/login", auth.LoginHandler(config.Auth))
+
+	mux.Handle("/logout", auth.LogoutHandler(config.Auth))
 
 	logged := mux.PathPrefix("/logged").Subrouter()
 	RegisterWithAuthRoutes(logged, config)

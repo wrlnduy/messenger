@@ -6,8 +6,14 @@ const authError = document.getElementById("auth-error");
 // --- AUTH ---
 
 function login() {
-  const username = document.getElementById("login-username").value;
-  const password = document.getElementById("login-password").value;
+  const usernameInput = document.getElementById("login-username");
+  const passwordInput = document.getElementById("login-password");
+
+  const username = usernameInput.value;
+  const password = passwordInput.value;
+
+  passwordInput.value = "";
+  passwordInput.type = "password";
 
   fetch("/login", {
     method: "POST",
@@ -16,16 +22,20 @@ function login() {
   })
     .then(checkStatus)
     .then(() => {
-      password.value = "";
-      password.type = "password";
       window.location.href = "/logged";
     })
     .catch(err => showError(err));
 }
 
 function register() {
-  const username = document.getElementById("reg-username").value;
-  const password = document.getElementById("reg-password").value;
+  const usernameInput = document.getElementById("reg-username");
+  const passwordInput = document.getElementById("reg-password");
+
+  const username = usernameInput.value;
+  const password = passwordInput.value;
+
+  passwordInput.value = "";
+  passwordInput.type = "password";
 
   fetch("/register", {
     method: "POST",
@@ -34,9 +44,7 @@ function register() {
   })
     .then(checkStatus)
     .then(() => {
-      password.value = "";
-      password.type = "password";
-      alert("Registered! Wait for admin approval.");
+      alert("Registered!");
     })
     .catch(err => showError(err));
 }
@@ -54,6 +62,7 @@ function logout() {
       chat.innerHTML = "";
       chatUI.style.display = "none";
       authUI.style.display = "block";
+      window.location.href = "/";
     });
 }
 
