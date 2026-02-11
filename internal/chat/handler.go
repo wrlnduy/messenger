@@ -8,9 +8,9 @@ import (
 
 	"messenger/internal/auth"
 	"messenger/internal/cache"
-	"messenger/internal/storage"
+	"messenger/internal/messages"
 	"messenger/internal/ws"
-	message "messenger/proto"
+	messenger "messenger/proto"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -21,7 +21,7 @@ type request struct {
 	Text string `json:"text"`
 }
 
-func PostMessage(hub *ws.Hub, store storage.Store, cache *cache.UserCache) http.HandlerFunc {
+func PostMessage(hub *ws.Hub, store messages.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -32,7 +32,7 @@ func PostMessage(hub *ws.Hub, store storage.Store, cache *cache.UserCache) http.
 		}
 
 		user := auth.UserWithCtx(r.Context())
-		msg := &message.ChatMessage{
+		msg := &messenger.ChatMessage{
 			MessageId: proto.String(uuid.NewString()),
 			UserId:    proto.String(*user.UserId),
 			Text:      proto.String(req.Text),
@@ -57,7 +57,7 @@ func PostMessage(hub *ws.Hub, store storage.Store, cache *cache.UserCache) http.
 	}
 }
 
-func History(store storage.Store, cache *cache.UserCache) http.HandlerFunc {
+func History(store messages.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		hist, err := store.History(r.Context())
 		if err != nil {

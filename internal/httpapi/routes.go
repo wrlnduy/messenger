@@ -4,8 +4,8 @@ import (
 	"messenger/internal/auth"
 	"messenger/internal/cache"
 	"messenger/internal/chat"
+	"messenger/internal/messages"
 	"messenger/internal/sessions"
-	"messenger/internal/storage"
 	"messenger/internal/users"
 	"messenger/internal/ws"
 	"net/http"
@@ -15,7 +15,7 @@ import (
 
 type Config struct {
 	Hub       *ws.Hub
-	Store     storage.Store
+	Store     messages.Store
 	Auth      *auth.Service
 	Users     users.Store
 	Sessions  sessions.Store

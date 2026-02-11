@@ -9,8 +9,8 @@ import (
 	"messenger/internal/cache"
 	"messenger/internal/db"
 	"messenger/internal/httpapi"
+	"messenger/internal/messages"
 	"messenger/internal/sessions"
-	"messenger/internal/storage"
 	"messenger/internal/users"
 	"messenger/internal/ws"
 
@@ -38,12 +38,12 @@ func main() {
 	}
 	defer rdb.Close()
 
-	store, err := storage.NewPostgresStore(dbs)
+	users, err := users.NewPostgresStore(dbs)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	users, err := users.NewPostgresStore(dbs)
+	store, err := messages.NewPostgresStore(dbs)
 	if err != nil {
 		log.Fatal(err)
 	}

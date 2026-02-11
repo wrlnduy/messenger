@@ -18,6 +18,20 @@ type PostgresStore struct {
 }
 
 func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS users (
+    user_id UUID PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+
+    created_at TIMESTAMP NOT NULL DEFAULT now()
+	);`)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PostgresStore{db: db}, nil
 }
 
