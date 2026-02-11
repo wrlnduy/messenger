@@ -69,14 +69,14 @@ function logout() {
 // --- CHAT ---
 
 function startChat() {
-  ws = new WebSocket(`wss://${window.location.host}/logged/ws`);
+  ws = new WebSocket(`wss://${window.location.host}/logged/ws?chat_id=00000000-0000-0000-0000-000000000001`);
 
   ws.onmessage = e => {
     const msg = JSON.parse(e.data);
     printMessage(msg);
   };
 
-  fetch("/logged/history")
+  fetch("/logged/history?chat_id=00000000-0000-0000-0000-000000000001")
     .then(res => res.json())
     .then(data => {
       const users = data.mapping;
@@ -94,7 +94,7 @@ function send() {
   const text = input.value.trim();
   if (!text) return;
 
-  fetch("/logged/message", {
+  fetch("/logged/message?chat_id=00000000-0000-0000-0000-000000000001", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text })

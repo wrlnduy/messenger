@@ -7,6 +7,7 @@ import (
 
 	"messenger/internal/auth"
 	"messenger/internal/cache"
+	"messenger/internal/chats"
 	"messenger/internal/db"
 	"messenger/internal/httpapi"
 	"messenger/internal/messages"
@@ -18,9 +19,6 @@ import (
 )
 
 func main() {
-	hub := ws.NewHub()
-	go hub.Run()
-
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
 		log.Fatal("DATABASE_URL is not set")
@@ -39,6 +37,11 @@ func main() {
 	defer rdb.Close()
 
 	users, err := users.NewPostgresStore(dbs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	chats, err := chats.NewPostgresStore(dbs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,12 +66,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+	manager := ws.NewHubManager(chats)
+
 	mux := mux.NewRouter()
 	httpapi.RegisterRoutes(mux, &httpapi.Config{
-		Hub:       hub,
+		Manager:   manager,
 		Store:     store,
 		Auth:      auth,
 		Users:     users,
+		Chats:     chats,
 		Sessions:  sessions,
 		UserCache: userCache,
 	})

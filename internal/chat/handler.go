@@ -22,7 +22,7 @@ type request struct {
 	Text string `json:"text"`
 }
 
-func PostMessage(hub *ws.Hub, store messages.Store, cache *cache.UserCache) http.HandlerFunc {
+func PostMessage(manager *ws.HubManager, store messages.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req request
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -32,10 +32,17 @@ func PostMessage(hub *ws.Hub, store messages.Store, cache *cache.UserCache) http
 			return
 		}
 
+		hub, err := manager.GetHubForRequst(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+
 		user := auth.UserWithCtx(r.Context())
 		msg := &messenger.ChatMessage{
 			MessageId: proto.String(uuid.NewString()),
 			UserId:    proto.String(*user.UserId),
+			ChatId:    proto.String(hub.ChatId.String()),
 			Text:      proto.String(req.Text),
 			Timestamp: timestamppb.New(time.Now()),
 		}
@@ -47,9 +54,7 @@ func PostMessage(hub *ws.Hub, store messages.Store, cache *cache.UserCache) http
 			return
 		}
 
-		userId, _ := uuid.Parse(*user.UserId)
-		username, err := cache.GetUsername(r.Context(), userId)
-		msg.Username = proto.String(username)
+		msg.Username = user.Username
 
 		data, _ := protojson.Marshal(msg)
 		hub.Broadcast(data)
@@ -58,9 +63,15 @@ func PostMessage(hub *ws.Hub, store messages.Store, cache *cache.UserCache) http
 	}
 }
 
-func History(store messages.Store, cache *cache.UserCache) http.HandlerFunc {
+func History(manager *ws.HubManager, store messages.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		hist, err := store.History(r.Context())
+		hub, err := manager.GetHubForRequst(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+
+		hist, err := store.History(r.Context(), hub.ChatId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

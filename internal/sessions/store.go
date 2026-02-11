@@ -13,12 +13,14 @@ type PostgresStore struct {
 }
 
 func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS sessions (
-    session_id UUID PRIMARY KEY,
-    user_id UUID NOT NULL REFERENCES users(user_id),
-    
-    expires_at TIMESTAMP NOT NULL
-	);`)
+	_, err := db.Exec(
+		`CREATE TABLE IF NOT EXISTS sessions (
+			session_id UUID PRIMARY KEY,
+			user_id UUID NOT NULL REFERENCES users(user_id),
+			
+			expires_at TIMESTAMP NOT NULL
+		);`,
+	)
 	if err != nil {
 		return nil, err
 	}

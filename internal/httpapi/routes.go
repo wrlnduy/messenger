@@ -4,6 +4,7 @@ import (
 	"messenger/internal/auth"
 	"messenger/internal/cache"
 	"messenger/internal/chat"
+	"messenger/internal/chats"
 	"messenger/internal/messages"
 	"messenger/internal/sessions"
 	"messenger/internal/users"
@@ -14,10 +15,11 @@ import (
 )
 
 type Config struct {
-	Hub       *ws.Hub
+	Manager   *ws.HubManager
 	Store     messages.Store
 	Auth      *auth.Service
 	Users     users.Store
+	Chats     chats.Store
 	Sessions  sessions.Store
 	UserCache *cache.UserCache
 }
@@ -40,11 +42,9 @@ func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
 		return auth.WithAuth(next, config.Auth)
 	})
 
-	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		ws.ServeWS(config.Hub, w, r)
-	})
+	mux.HandleFunc("/ws", ws.ServeWS(config.Manager))
 
-	mux.Handle("/message", chat.PostMessage(config.Hub, config.Store, config.UserCache))
+	mux.Handle("/message", chat.PostMessage(config.Manager, config.Store, config.UserCache))
 
-	mux.HandleFunc("/history", chat.History(config.Store, config.UserCache))
+	mux.HandleFunc("/history", chat.History(config.Manager, config.Store, config.UserCache))
 }

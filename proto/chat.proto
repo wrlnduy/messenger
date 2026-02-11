@@ -1,0 +1,20 @@
+package messenger;
+
+import "google/protobuf/timestamp.proto";
+
+enum ChatType {
+    GLOBAL = 1;
+    DIRECT = 2;
+    GROUP = 3;
+}
+
+message chat {
+    optional string chatId = 1;
+    optional ChatType type = 2;
+
+    optional string title = 3;
+
+    repeated string userIds = 4;
+
+    optional google.protobuf.Timestamp createdAt = 5;
+}
