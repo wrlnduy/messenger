@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type request struct {
@@ -36,7 +37,7 @@ func PostMessage(hub *ws.Hub, store messages.Store, cache *cache.UserCache) http
 			MessageId: proto.String(uuid.NewString()),
 			UserId:    proto.String(*user.UserId),
 			Text:      proto.String(req.Text),
-			Timestamp: proto.Int64(time.Now().Unix()),
+			Timestamp: timestamppb.New(time.Now()),
 		}
 
 		err = store.Save(r.Context(), msg)

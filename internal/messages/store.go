@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type PostgresStore struct {
@@ -33,7 +33,7 @@ func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
 func (s *PostgresStore) Save(ctx context.Context, msg *messenger.ChatMessage) error {
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO chat_messages(message_id, user_id, text, timestamp) VALUES($1,$2,$3,$4)`,
-		msg.MessageId, msg.UserId, msg.Text, time.Unix(*msg.Timestamp, 0),
+		*msg.MessageId, *msg.UserId, *msg.Text, msg.Timestamp.AsTime(),
 	)
 	return err
 }
@@ -52,7 +52,7 @@ func (s *PostgresStore) List(ctx context.Context) ([]*messenger.ChatMessage, err
 		if err := rows.Scan(&msg.MessageId, &msg.UserId, &msg.Text, &t); err != nil {
 			return nil, err
 		}
-		msg.Timestamp = proto.Int64(t.Unix())
+		msg.Timestamp = timestamppb.New(t)
 		messages = append(messages, &msg)
 	}
 	return messages, rows.Err()
