@@ -11,12 +11,14 @@ var (
 	GlobalChatID = uuid.MustParse("00000000-0000-0000-0000-000000000001")
 )
 
-type Chat messenger.Chat
+type Chat = messenger.Chat
+
+type Chats = messenger.Chats
 
 type Store interface {
 	GetByID(ctx context.Context, chatId uuid.UUID) (*Chat, error)
 
-	GetUserChats(ctx context.Context, userId uuid.UUID) ([]*Chat, error)
+	GetUserChats(ctx context.Context, userId uuid.UUID) (*Chats, error)
 
 	GetDirect(ctx context.Context, u1, u2 uuid.UUID) (*Chat, error)
 

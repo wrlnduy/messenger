@@ -1,7 +1,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'chat_type') THEN
-        CREATE TYPE chat_type AS ENUM ('global', 'direct', 'group');
+        CREATE TYPE chat_type AS ENUM ('GLOBAL', 'DIRECT', 'GROUP');
     END IF;
 END
 $$;

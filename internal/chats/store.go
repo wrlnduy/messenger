@@ -23,7 +23,7 @@ func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
 		`DO $$
 		BEGIN
 			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'chat_type') THEN
-				CREATE TYPE chat_type AS ENUM ('global', 'direct', 'group');
+				CREATE TYPE chat_type AS ENUM ('GLOBAL', 'DIRECT', 'GROUP');
 			END IF;
 		END
 		$$;
@@ -38,7 +38,7 @@ func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
 		DO $$
 		BEGIN
 			IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'chat_role') THEN
-				CREATE TYPE chat_role AS ENUM ('member', 'admin');
+				CREATE TYPE chat_role AS ENUM ('MEMBER', 'ADMIN');
 			END IF;
 		END
 		$$;
@@ -64,15 +64,17 @@ func (s *PostgresStore) GetByID(
 	chat := new(Chat)
 
 	var t time.Time
+	var ctype string
 	err := s.db.QueryRowContext(ctx,
 		`SELECT chat_id, type, title, created_at
 		FROM chats WHERE chat_id = $1`,
 		chatId,
-	).Scan(&chat.ChatId, &chat.Type, &chat.Title, &t)
+	).Scan(&chat.ChatId, &ctype, &chat.Title, &t)
 	if err != nil {
 		return nil, err
 	}
 	chat.CreatedAt = timestamppb.New(t)
+	chat.Type = messenger.ChatType(messenger.ChatType_value[ctype]).Enum()
 
 	return chat, nil
 }
@@ -80,7 +82,7 @@ func (s *PostgresStore) GetByID(
 func (s *PostgresStore) GetUserChats(
 	ctx context.Context,
 	userId uuid.UUID,
-) ([]*Chat, error) {
+) (*Chats, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT chat_id, user_id FROM chat_members WHERE user_id = $1`,
 		userId,
@@ -107,7 +109,7 @@ func (s *PostgresStore) GetUserChats(
 		chats = append(chats, chat)
 	}
 
-	return chats, nil
+	return &Chats{Chats: chats}, nil
 }
 
 func (s *PostgresStore) GetDirect(

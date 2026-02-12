@@ -14,7 +14,9 @@ message chat {
 
     optional string title = 3;
 
-    repeated string userIds = 4;
-
     optional google.protobuf.Timestamp createdAt = 5;
+}
+
+message chats {
+    repeated chat chats = 2;
 }

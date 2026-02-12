@@ -1,7 +1,7 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'chat_role') THEN
-        CREATE TYPE chat_role AS ENUM ('member', 'admin');
+        CREATE TYPE chat_role AS ENUM ('MEMBER', 'ADMIN');
     END IF;
 END
 $$;

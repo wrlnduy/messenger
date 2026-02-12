@@ -8,6 +8,7 @@ import (
 
 	"messenger/internal/auth"
 	"messenger/internal/cache"
+	"messenger/internal/chats"
 	"messenger/internal/messages"
 	"messenger/internal/ws"
 	messenger "messenger/proto"
@@ -84,6 +85,22 @@ func History(manager *ws.HubManager, store messages.Store, cache *cache.UserCach
 		}
 
 		data, _ := protojson.Marshal(hist)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+	}
+}
+
+func Chats(store chats.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userId := auth.UserIdWithCtx(r.Context())
+
+		chats, err := store.GetUserChats(r.Context(), userId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		data, _ := protojson.Marshal(chats)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}
