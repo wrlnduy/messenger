@@ -57,7 +57,7 @@ func (s *PostgresStore) List(ctx context.Context, chat_id uuid.UUID) ([]*messeng
 	}
 	defer rows.Close()
 
-	var messages []*messenger.ChatMessage
+	messages := make([]*messenger.ChatMessage, 0)
 	for rows.Next() {
 		var msg messenger.ChatMessage
 		var t time.Time

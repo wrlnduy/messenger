@@ -92,7 +92,7 @@ func (s *PostgresStore) GetUserChats(
 	}
 	defer rows.Close()
 
-	var chats []*Chat
+	chats := make([]*Chat, 0)
 
 	for rows.Next() {
 		var chatId uuid.UUID
@@ -271,4 +271,20 @@ func (s *PostgresStore) IsMember(
 		return false, err
 	}
 	return true, nil
+}
+
+func (s *PostgresStore) GetDirectBuddyId(
+	ctx context.Context,
+	chatId uuid.UUID,
+	userId uuid.UUID,
+) (uuid.UUID, error) {
+	var uId uuid.UUID
+	err := s.db.QueryRowContext(ctx,
+		`SELECT c.user_id
+		FROM chat_members c
+		WHERE chat_id = $1 AND user_id != $2`,
+		chatId,
+		userId,
+	).Scan(&uId)
+	return uId, err
 }

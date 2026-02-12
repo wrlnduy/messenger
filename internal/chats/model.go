@@ -27,4 +27,6 @@ type Store interface {
 	CreateGroup(ctx context.Context, creator uuid.UUID, title string, users uuid.UUIDs) (*Chat, error)
 
 	IsMember(ctx context.Context, chatId uuid.UUID, userId uuid.UUID) (bool, error)
+
+	GetDirectBuddyId(ctx context.Context, chatId uuid.UUID, userId uuid.UUID) (uuid.UUID, error)
 }

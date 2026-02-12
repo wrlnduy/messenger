@@ -48,7 +48,7 @@ func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
 
 	mux.HandleFunc("/history", chat.History(config.Manager, config.Store, config.UserCache))
 
-	mux.HandleFunc("/chats", chat.Chats(config.Chats))
+	mux.HandleFunc("/chats", chat.Chats(config.Chats, config.UserCache))
 
 	mux.HandleFunc("/direct", chat.GetCreateDirect(config.Chats, config.Users))
 }

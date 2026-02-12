@@ -84,23 +84,43 @@ func History(manager *ws.HubManager, store messages.Store, cache *cache.UserCach
 			return
 		}
 
-		data, _ := protojson.Marshal(hist)
+		data, _ := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(hist)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}
 }
 
-func Chats(chats chats.Store) http.HandlerFunc {
+func Chats(store chats.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := auth.UserIdWithCtx(r.Context())
 
-		chats, err := chats.GetUserChats(r.Context(), userId)
+		chats, err := store.GetUserChats(r.Context(), userId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		data, _ := protojson.Marshal(chats)
+		for _, chat := range chats.Chats {
+			if chat.Type.Number() != messenger.ChatType_DIRECT.Number() {
+				continue
+			}
+
+			chatId, _ := uuid.Parse(*chat.ChatId)
+			buddyId, err := store.GetDirectBuddyId(r.Context(), chatId, userId)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			username, err := cache.GetUsername(r.Context(), buddyId)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			chat.Title = proto.String(username)
+		}
+
+		data, _ := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(chats)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}

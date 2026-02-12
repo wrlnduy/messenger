@@ -98,7 +98,6 @@ function addMessage(username, text, timestamp) {
 
   let timeStr = "";
   if (timestamp) {
-    console.log(timestamp)
     const ts = new Date(timestamp);
     timeStr = ` <span style="color:gray;font-size:12px;">(${ts.toLocaleString()})</span>`;
   }
