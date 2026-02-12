@@ -1,7 +1,9 @@
 package chat
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -10,6 +12,7 @@ import (
 	"messenger/internal/cache"
 	"messenger/internal/chats"
 	"messenger/internal/messages"
+	"messenger/internal/users"
 	"messenger/internal/ws"
 	messenger "messenger/proto"
 
@@ -19,17 +22,14 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-type request struct {
-	Text string `json:"text"`
-}
-
 func PostMessage(manager *ws.HubManager, store messages.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req request
+		var req struct {
+			Text string `json:"text"`
+		}
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
@@ -90,17 +90,52 @@ func History(manager *ws.HubManager, store messages.Store, cache *cache.UserCach
 	}
 }
 
-func Chats(store chats.Store) http.HandlerFunc {
+func Chats(chats chats.Store) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userId := auth.UserIdWithCtx(r.Context())
 
-		chats, err := store.GetUserChats(r.Context(), userId)
+		chats, err := chats.GetUserChats(r.Context(), userId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		data, _ := protojson.Marshal(chats)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+	}
+}
+
+func GetCreateDirect(chats chats.Store, users users.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		u1 := auth.UserIdWithCtx(r.Context())
+
+		var req struct {
+			Username string `json:"username"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		u, err := users.FindByUsername(r.Context(), req.Username)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		u2, _ := uuid.Parse(*u.UserId)
+
+		chat, err := chats.GetDirect(r.Context(), u1, u2)
+		if errors.Is(err, sql.ErrNoRows) {
+			chat, err = chats.CreateDirect(r.Context(), u1, u2)
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		data, _ := protojson.Marshal(chat)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
 	}

@@ -18,6 +18,21 @@ body {
   overflow-y: auto;
 }
 
+#directCreate {
+  display: flex;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+#directCreate input {
+  flex: 1;
+  padding: 6px;
+}
+
+#directCreate button {
+  margin-left: 5px;
+}
+
 #chatList {
   list-style: none;
   padding: 0;
@@ -67,6 +82,11 @@ body {
 <body>
 
 <div id="sidebar">
+  <div id="directCreate">
+    <input id="directInput" placeholder="Start chat with username..." />
+    <button id="directBtn">Start</button>
+  </div>
+
   <ul id="chatList"></ul>
 </div>
 

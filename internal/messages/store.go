@@ -38,8 +38,8 @@ func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
 
 func (s *PostgresStore) Save(ctx context.Context, msg *messenger.ChatMessage) error {
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO chat_messages(message_id, user_id, text, timestamp) VALUES($1,$2,$3,$4)`,
-		*msg.MessageId, *msg.UserId, *msg.Text, msg.Timestamp.AsTime(),
+		`INSERT INTO chat_messages(message_id, chat_id, user_id, text, timestamp) VALUES($1, $2, $3, $4, $5)`,
+		*msg.MessageId, *msg.ChatId, *msg.UserId, *msg.Text, msg.Timestamp.AsTime(),
 	)
 	return err
 }

@@ -118,11 +118,11 @@ func (s *PostgresStore) GetDirect(
 ) (*Chat, error) {
 	var chatId uuid.UUID
 	err := s.db.QueryRowContext(ctx,
-		`SELECT c.id
+		`SELECT c.chat_id
 		FROM chats c
-		JOIN chat_users cm1 WHERE cm1.chat_id = c.chat_id
-		JOIN chat_users cm2 WHERE cm2.chat_id = c.chat_id
-		WHERE c.type = 'direct'
+		JOIN chat_members cm1 ON cm1.chat_id = c.chat_id
+		JOIN chat_members cm2 ON cm2.chat_id = c.chat_id
+		WHERE c.type = 'DIRECT'
 		AND cm1.user_id = $1
 		AND cm2.user_id = $2`,
 		u1, u2,
@@ -157,7 +157,7 @@ func (s *PostgresStore) CreateDirect(
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO chats (chat_id, type, created_at) VALUES ($1, $2, $3)`,
 		*chat.ChatId,
-		chat.Type.Number(),
+		chat.Type.String(),
 		chat.CreatedAt.AsTime(),
 	)
 	if err != nil {
@@ -203,7 +203,7 @@ func (s *PostgresStore) CreateGroup(
 	_, err = tx.ExecContext(ctx,
 		`INSERT INTO chats (chat_id, type, created_at) VALUES ($1, $2, $3)`,
 		*chat.ChatId,
-		chat.Type.Number(),
+		chat.Type.String(),
 		chat.CreatedAt.AsTime(),
 	)
 	if err != nil {
@@ -214,7 +214,7 @@ func (s *PostgresStore) CreateGroup(
 		`INSERT INTO chat_members (chat_id, user_id, role) VALUES ($1, $2, $3)`,
 		*chat.ChatId,
 		creator,
-		"admin",
+		"ADMIN",
 	)
 	if err != nil {
 		return nil, err

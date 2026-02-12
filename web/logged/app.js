@@ -4,6 +4,8 @@ let currentChatId = null;
 const chatListEl = document.getElementById("chatList");
 const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("messageInput");
+const directInput = document.getElementById("directInput");
+const directBtn = document.getElementById("directBtn");
 
 async function loadChats() {
   const res = await fetch("/logged/chats");
@@ -13,10 +15,15 @@ async function loadChats() {
 
   data.chats.forEach(chat => {
     const li = document.createElement("li");
+
     li.textContent = chat.title || chat.chatId;
+    li.dataset.id = chat.chatId;
+
     li.onclick = () => selectChat(chat.chatId, li);
+
     chatListEl.appendChild(li);
   });
+
 }
 
 async function selectChat(chatId, element) {
@@ -101,5 +108,44 @@ function addMessage(username, text, timestamp) {
   messagesEl.appendChild(div);
   messagesEl.scrollTop = messagesEl.scrollHeight;
 }
+
+async function createDirect() {
+  const username = directInput.value.trim();
+  if (!username) return;
+
+  const res = await fetch("/logged/direct", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username })
+  });
+
+  if (!res.ok) {
+    alert("User not found");
+    return;
+  }
+
+  const chat = await res.json();
+
+  directInput.value = "";
+
+  await loadChats();
+
+  setTimeout(() => {
+    const items = document.querySelectorAll("#chatList li");
+    items.forEach(li => {
+      if (li.dataset.id === chat.chatId) {
+        li.click();
+      }
+    });
+  }, 50);
+}
+
+directBtn.onclick = createDirect;
+
+directInput.addEventListener("keypress", (e) => {
+  if (e.key === "Enter") {
+    createDirect();
+  }
+});
 
 loadChats();
