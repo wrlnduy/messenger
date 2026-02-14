@@ -12,7 +12,6 @@ import (
 	"messenger/internal/cache"
 	"messenger/internal/chats"
 	"messenger/internal/messages"
-	"messenger/internal/users"
 	"messenger/internal/ws"
 	messenger "messenger/proto"
 
@@ -126,7 +125,7 @@ func Chats(store chats.Store, cache *cache.UserCache) http.HandlerFunc {
 	}
 }
 
-func GetCreateDirect(chats chats.Store, users users.Store) http.HandlerFunc {
+func GetCreateDirect(chats chats.Store, cache *cache.UserCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		u1 := auth.UserIdWithCtx(r.Context())
 
@@ -139,17 +138,48 @@ func GetCreateDirect(chats chats.Store, users users.Store) http.HandlerFunc {
 			return
 		}
 
-		u, err := users.FindByUsername(r.Context(), req.Username)
+		u2, err := cache.GetUserId(r.Context(), req.Username)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		u2, _ := uuid.Parse(*u.UserId)
 
 		chat, err := chats.GetDirect(r.Context(), u1, u2)
 		if errors.Is(err, sql.ErrNoRows) {
 			chat, err = chats.CreateDirect(r.Context(), u1, u2)
 		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		data, _ := protojson.Marshal(chat)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(data)
+	}
+}
+
+func CreateGroup(chats chats.Store, cache *cache.UserCache) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		creator := auth.UserIdWithCtx(r.Context())
+
+		var req struct {
+			Title     string   `json:"title"`
+			Usernames []string `json:"usernames"`
+		}
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		users, err := UserIDsByUsernames(r.Context(), cache, req.Usernames)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		chat, err := chats.CreateGroup(r.Context(), creator, req.Title, users)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

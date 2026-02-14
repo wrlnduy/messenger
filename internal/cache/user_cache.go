@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"messenger/internal/users"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	TTL = time.Hour * 24
+	TTL = time.Hour
 )
 
 type UserCache struct {
@@ -61,4 +62,26 @@ func (c *UserCache) GetMapping(
 	}
 
 	return users, nil
+}
+
+func (c *UserCache) GetUserId(
+	ctx context.Context,
+	username string,
+) (uuid.UUID, error) {
+	key := fmt.Sprint("username:%v", username)
+
+	id, err := c.rdb.Get(ctx, key).Result()
+	if err == nil {
+		uid, _ := uuid.Parse(id)
+		return uid, nil
+	}
+
+	user, err := c.users.FindByUsername(ctx, username)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	c.rdb.Set(ctx, key, *user.UserId, TTL)
+
+	uid, _ := uuid.Parse(*user.UserId)
+	return uid, nil
 }

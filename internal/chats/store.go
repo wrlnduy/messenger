@@ -201,10 +201,11 @@ func (s *PostgresStore) CreateGroup(
 	}
 
 	_, err = tx.ExecContext(ctx,
-		`INSERT INTO chats (chat_id, type, created_at) VALUES ($1, $2, $3)`,
+		`INSERT INTO chats (chat_id, type, created_at, title) VALUES ($1, $2, $3, $4)`,
 		*chat.ChatId,
 		chat.Type.String(),
 		chat.CreatedAt.AsTime(),
+		title,
 	)
 	if err != nil {
 		return nil, err
@@ -233,7 +234,7 @@ func (s *PostgresStore) CreateGroup(
 				q.WriteString(`, `)
 			}
 
-			q.WriteString(fmt.Sprint("($1, $%v)", i+2))
+			q.WriteString(fmt.Sprintf("($1, $%v)", i+2))
 			args = append(args, u)
 		}
 

@@ -6,6 +6,9 @@ const messagesEl = document.getElementById("messages");
 const inputEl = document.getElementById("messageInput");
 const directInput = document.getElementById("directInput");
 const directBtn = document.getElementById("directBtn");
+const groupTitleInput = document.getElementById("groupTitle");
+const groupUsersInput = document.getElementById("groupUsers");
+const groupBtn = document.getElementById("groupBtn");
 
 async function loadChats() {
   const res = await fetch("/logged/chats");
@@ -146,5 +149,51 @@ directInput.addEventListener("keypress", (e) => {
     createDirect();
   }
 });
+
+async function createGroup() {
+  const title = groupTitleInput.value.trim();
+  const usersRaw = groupUsersInput.value.trim();
+
+  if (!title) {
+    alert("Enter group title");
+    return;
+  }
+
+  const usernames = usersRaw
+    ? usersRaw.split(",").map(u => u.trim()).filter(u => u.length > 0)
+    : [];
+
+  const res = await fetch("/logged/group", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title,
+      usernames
+    })
+  });
+
+  if (!res.ok) {
+    alert("Failed to create group");
+    return;
+  }
+
+  const chat = await res.json();
+
+  groupTitleInput.value = "";
+  groupUsersInput.value = "";
+
+  await loadChats();
+
+  setTimeout(() => {
+    const items = document.querySelectorAll("#chatList li");
+    items.forEach(li => {
+      if (li.dataset.id === chat.chatId) {
+        li.click();
+      }
+    });
+  }, 50);
+}
+
+groupBtn.onclick = createGroup;
 
 loadChats();

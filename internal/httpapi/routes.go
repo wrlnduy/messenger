@@ -50,5 +50,7 @@ func RegisterWithAuthRoutes(mux *mux.Router, config *Config) {
 
 	mux.HandleFunc("/chats", chat.Chats(config.Chats, config.UserCache))
 
-	mux.HandleFunc("/direct", chat.GetCreateDirect(config.Chats, config.Users))
+	mux.HandleFunc("/direct", chat.GetCreateDirect(config.Chats, config.UserCache))
+
+	mux.HandleFunc("/group", chat.CreateGroup(config.Chats, config.UserCache))
 }

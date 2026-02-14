@@ -33,6 +33,22 @@ body {
   margin-left: 5px;
 }
 
+#groupCreate {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#groupCreate input {
+  padding: 6px;
+}
+
+#groupCreate button {
+  padding: 6px;
+}
+
 #chatList {
   list-style: none;
   padding: 0;
@@ -85,6 +101,12 @@ body {
   <div id="directCreate">
     <input id="directInput" placeholder="Start chat with username..." />
     <button id="directBtn">Start</button>
+  </div>
+
+  <div id="groupCreate">
+    <input id="groupTitle" placeholder="Group title" />
+    <input id="groupUsers" placeholder="Usernames (comma separated)" />
+    <button id="groupBtn">Create</button>
   </div>
 
   <ul id="chatList"></ul>
