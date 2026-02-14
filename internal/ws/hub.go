@@ -1,15 +1,20 @@
 package ws
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+)
 
 type Hub struct {
+	ChatId uuid.UUID
+
 	clients    map[uuid.UUID]*Client
 	register   chan *Client
 	unregister chan *Client
 }
 
-func NewHub() *Hub {
+func NewHub(chatId uuid.UUID) *Hub {
 	return &Hub{
+		ChatId:     chatId,
 		clients:    make(map[uuid.UUID]*Client),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),

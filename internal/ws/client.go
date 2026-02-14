@@ -33,7 +33,7 @@ func (c *Client) ReadPump() {
 	for {
 		_, _, err := c.conn.ReadMessage()
 		if err != nil {
-			log.Printf("User:%v failed on reading message: %v\n", c.UserID, err)
+			log.Printf("User:%v failed on reading pump: %v\n", c.UserID, err)
 			break
 		}
 	}
@@ -48,7 +48,7 @@ func (c *Client) WritePump() {
 	for msg := range c.send {
 		err := c.conn.WriteMessage(websocket.TextMessage, msg)
 		if err != nil {
-			log.Printf("User:%v failed on writing message: %v\n", c.UserID, err)
+			log.Printf("User:%v failed on writing pump: %v\n", c.UserID, err)
 			break
 		}
 	}

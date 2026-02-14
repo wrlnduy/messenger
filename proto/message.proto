@@ -1,10 +1,15 @@
 package messenger;
 
+import "google/protobuf/timestamp.proto";
+
 message ChatMessage {
     optional string messageId = 4;
+    optional string chatId = 6;
+
     optional string userId = 1;
     optional string text = 2;
-    optional int64 timestamp = 3;
+    optional google.protobuf.Timestamp timestamp = 3;
+
     optional string username = 5;         
 }
 

@@ -13,15 +13,23 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:      func(r *http.Request) bool { return true },
 }
 
-func ServeWS(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		return
+func ServeWS(manager *HubManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		hub, err := manager.GetHubForRequst(r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
+			return
+		}
+
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			return
+		}
+
+		client := NewClient(hub, conn, auth.UserIdWithCtx(r.Context()))
+		hub.register <- client
+
+		go client.ReadPump()
+		go client.WritePump()
 	}
-
-	client := NewClient(hub, conn, auth.UserIdWithCtx(r.Context()))
-	hub.register <- client
-
-	go client.ReadPump()
-	go client.WritePump()
 }

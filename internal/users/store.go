@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"messenger/internal/chats"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -18,16 +19,56 @@ type PostgresStore struct {
 }
 
 func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
+	_, err := db.Exec(
+		`CREATE TABLE IF NOT EXISTS users (
+			user_id UUID PRIMARY KEY,
+			username TEXT UNIQUE NOT NULL,
+			password_hash TEXT NOT NULL,
+
+			is_active BOOLEAN NOT NULL DEFAULT TRUE,
+			is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+
+			created_at TIMESTAMP NOT NULL DEFAULT now()
+		);`,
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	return &PostgresStore{db: db}, nil
 }
 
 func (s *PostgresStore) CreateUser(ctx context.Context, id uuid.UUID, username, passwordHash string) error {
-	_, err := s.db.ExecContext(
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	_, err = tx.ExecContext(
 		ctx,
 		`INSERT INTO users (user_id, username, password_hash) VALUES ($1, $2, $3)`,
 		id, username, passwordHash,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.ExecContext(
+		ctx,
+		`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`,
+		chats.GlobalChatID,
+		id,
+	)
+	if err != nil {
+		return err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *PostgresStore) FindByUsername(ctx context.Context, username string) (*User, error) {
