@@ -1,0 +1,26 @@
+package chatpb;
+
+option go_package = "messenger/proto/chats;chatpb";
+
+import "google/protobuf/timestamp.proto";
+
+enum ChatType {
+    GLOBAL = 1;
+    DIRECT = 2;
+    GROUP = 3;
+}
+
+message Chat {
+    optional string chatId = 1;
+    optional ChatType type = 2;
+
+    optional string title = 3;
+
+    optional google.protobuf.Timestamp createdAt = 4;
+
+    optional int64 unread = 5;
+}
+
+message Chats {
+    repeated Chat chats = 2;
+}

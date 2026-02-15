@@ -1,12 +1,55 @@
 services:
-  backend:
-    build: .
+  gateway:
+      build:
+        context: .
+        args:
+          SERVICE: gateway
+      ports:
+        - "8080:8080"
+      env_file:
+        - .env
+      depends_on:
+        - postgres
+        - redis
+
+  users-service:
+    build:
+      context: .
+      args:
+        SERVICE: users-service
     ports:
-      - "8080:8080"
+      - "50051:50051"
     env_file:
       - .env
     depends_on:
       - postgres
+      - redis
+
+  auth-service:
+    build:
+      context: .
+      args:
+        SERVICE: auth-service
+    ports:
+      - "50052:50052"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+    
+  chat-service:
+    build:
+      context: .
+      args:
+        SERVICE: chat-service
+    ports:
+      - "50053:50053"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
 
   postgres:
     image: postgres:16

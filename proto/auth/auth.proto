@@ -1,0 +1,42 @@
+package authpb;
+
+option go_package = "messenger/proto/auth;authpb";
+
+import "users/users.proto";
+import "google/protobuf/empty.proto";
+
+service AuthService {
+    rpc Register(RegisterRequest) returns (RegisterResponse);
+    
+    rpc Login(LoginRequest) returns (LoginResponse);
+
+    rpc Logout(LogoutRequest) returns (google.protobuf.Empty);
+
+    rpc UserBySession(UserBySessionRequest) returns (userpb.User);
+}
+
+message RegisterRequest {
+    optional string username = 1;
+    optional string password = 2;
+}
+
+message RegisterResponse {
+    optional string userId = 1;
+}
+
+message LoginRequest {
+    optional string username = 1;
+    optional string password = 2;
+}
+
+message LoginResponse {
+    optional string sessionId = 1;
+}
+
+message LogoutRequest {
+    optional string sessionId = 1;
+}
+
+message UserBySessionRequest {
+    optional string sessionId = 1;
+}

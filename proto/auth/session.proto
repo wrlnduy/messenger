@@ -1,0 +1,9 @@
+package authpb;
+
+option go_package = "messenger/proto/auth;authpb";
+
+message Session {
+    optional string sessionId = 1;
+    optional string userId = 2;
+    optional int64 expiresAt = 3;
+}

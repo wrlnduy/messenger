@@ -4,7 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"messenger/internal/chats"
+
+	userpb "messenger/proto/users"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -38,41 +39,17 @@ func NewPostgresStore(db *sql.DB) (*PostgresStore, error) {
 	return &PostgresStore{db: db}, nil
 }
 
-func (s *PostgresStore) CreateUser(ctx context.Context, id uuid.UUID, username, passwordHash string) error {
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	_, err = tx.ExecContext(
+func (s *PostgresStore) CreateUser(ctx context.Context, userId uuid.UUID, username, passwordHash string) error {
+	_, err := s.db.ExecContext(
 		ctx,
 		`INSERT INTO users (user_id, username, password_hash) VALUES ($1, $2, $3)`,
-		id, username, passwordHash,
+		userId, username, passwordHash,
 	)
-	if err != nil {
-		return err
-	}
-
-	_, err = tx.ExecContext(
-		ctx,
-		`INSERT INTO chat_members (chat_id, user_id) VALUES ($1, $2)`,
-		chats.GlobalChatID,
-		id,
-	)
-	if err != nil {
-		return err
-	}
-
-	if err = tx.Commit(); err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (s *PostgresStore) FindByUsername(ctx context.Context, username string) (*User, error) {
-	user := &User{
+func (s *PostgresStore) FindByUsername(ctx context.Context, username string) (*userpb.User, error) {
+	user := &userpb.User{
 		Username: proto.String(username),
 	}
 
@@ -88,8 +65,8 @@ func (s *PostgresStore) FindByUsername(ctx context.Context, username string) (*U
 	return user, nil
 }
 
-func (s *PostgresStore) FindByID(ctx context.Context, id uuid.UUID) (*User, error) {
-	user := &User{
+func (s *PostgresStore) FindByID(ctx context.Context, id uuid.UUID) (*userpb.User, error) {
+	user := &userpb.User{
 		UserId: proto.String(id.String()),
 	}
 
@@ -103,27 +80,4 @@ func (s *PostgresStore) FindByID(ctx context.Context, id uuid.UUID) (*User, erro
 		return nil, err
 	}
 	return user, nil
-}
-
-func (s *PostgresStore) ApproveUser(ctx context.Context, approval_id uuid.UUID, id uuid.UUID) error {
-	admin, err := s.FindByID(ctx, approval_id)
-	if err != nil {
-		return err
-	}
-
-	if !*admin.IsAdmin {
-		return ErrorNotAdmin
-	}
-
-	_, err = s.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.db.ExecContext(ctx, `UPDATE users SET is_active = true WHERE user_id = $1`, id)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

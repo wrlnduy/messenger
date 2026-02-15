@@ -1,0 +1,48 @@
+package userpb;
+
+option go_package = "messenger/proto/users;userpb";
+
+service UsersService {
+    rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+
+    rpc FindByID(FindByIDRequest) returns (User);
+    
+    rpc FindByUsername(FindByUsernameRequest) returns (User);
+
+    rpc GetMapping(GetMappingRequest) returns (GetMappingResponse);
+}
+
+message CreateUserRequest {
+    optional string username = 1;
+    optional string passwordHash = 2;
+}
+
+message CreateUserResponse {
+    optional string userId = 1;
+}
+
+message FindByIDRequest {
+    optional string userId = 1;
+}
+
+message FindByUsernameRequest {
+    optional string username = 1;
+}
+
+message GetMappingRequest {
+    repeated string userIDs = 1;
+}
+
+message GetMappingResponse {
+    map<string, string> mapping = 1;
+}
+
+message User {
+    optional string userId = 1;
+    optional string username = 2;
+
+    optional bool isActive = 3;
+    optional bool isAdmin = 4;
+    
+    optional string passwordHash = 5;
+}

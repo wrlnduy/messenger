@@ -1,0 +1,14 @@
+package chatpb;
+
+option go_package = "messenger/proto/chats;chatpb";
+
+enum ChatRole {
+    MEMBER = 1;
+    ADMIN = 2;
+}
+
+message ChatMember {
+    optional string chatId = 1;
+    optional string userId = 2;
+    optional ChatRole role = 3;
+}

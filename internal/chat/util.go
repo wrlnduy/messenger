@@ -2,41 +2,53 @@ package chat
 
 import (
 	"context"
-	"messenger/internal/cache"
-	messenger "messenger/proto"
+	"errors"
+	"fmt"
+
+	chatpb "messenger/proto/chats"
+	userpb "messenger/proto/users"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
-func FillMapping(ctx context.Context, hist *messenger.ChatHistory, cache *cache.UserCache) error {
-	userIDs := make(map[uuid.UUID]struct{})
+func (s *Service) fillMapping(ctx context.Context, hist *chatpb.ChatHistory) error {
+	uniqueUserIDs := make(map[uuid.UUID]struct{})
 	for _, msg := range hist.Messages {
-		id, _ := uuid.Parse(*msg.UserId)
-		userIDs[id] = struct{}{}
+		uniqueUserIDs[uuid.MustParse(*msg.UserId)] = struct{}{}
 	}
 
-	users, err := cache.GetMapping(ctx, userIDs)
+	userIDs := make(uuid.UUIDs, 0, len(uniqueUserIDs))
+	for id := range uniqueUserIDs {
+		userIDs = append(userIDs, id)
+	}
+
+	resp, err := s.usersClient.GetMapping(ctx, &userpb.GetMappingRequest{
+		UserIDs: userIDs.Strings(),
+	})
 	if err != nil {
 		return err
 	}
 
-	hist.Mapping = make(map[string]string)
-	for userId, username := range users {
-		hist.Mapping[userId.String()] = username
-	}
+	hist.Mapping = resp.Mapping
 
 	return nil
 }
 
-func UserIDsByUsernames(ctx context.Context, cache *cache.UserCache, usernames []string) (uuid.UUIDs, error) {
+func (s *Service) userIDsByUsernames(ctx context.Context, usernames []string) (uuid.UUIDs, error) {
 	userIDs := make(map[uuid.UUID]struct{})
 	for _, username := range usernames {
-		id, err := cache.GetUserId(ctx, username)
+		resp, err := s.usersClient.FindByUsername(
+			ctx,
+			&userpb.FindByUsernameRequest{
+				Username: proto.String(username),
+			},
+		)
 		if err != nil {
 			return nil, err
 		}
 
-		userIDs[id] = struct{}{}
+		userIDs[uuid.MustParse(resp.GetUserId())] = struct{}{}
 	}
 
 	ids := make(uuid.UUIDs, 0, len(userIDs))
@@ -45,4 +57,17 @@ func UserIDsByUsernames(ctx context.Context, cache *cache.UserCache, usernames [
 	}
 
 	return ids, nil
+}
+
+func (s *Service) validateUser(
+	ctx context.Context,
+	userId uuid.UUID,
+	chatId uuid.UUID,
+) error {
+	ok, err := s.members.IsMember(ctx, chatId, userId)
+	if err != nil || !ok {
+		return errors.New(fmt.Sprintf("User %q should member of chat %q", userId, chatId))
+	}
+
+	return nil
 }

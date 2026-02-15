@@ -1,7 +1,0 @@
-package messenger;
-
-message session {
-    optional string sessionId = 1;
-    optional string userId = 2;
-    optional int64 expiresAt = 3;
-}

@@ -19,9 +19,19 @@ async function loadChats() {
   data.chats.forEach(chat => {
     const li = document.createElement("li");
 
-    li.textContent = chat.title || chat.chatId;
-    li.dataset.id = chat.chatId;
+    let badge = "";
+    if (chat.unread > 0) {
+      badge = ` <span class="badge">${chat.unread}</span>`;
+    }
 
+    li.innerHTML = `
+      <div class="chat-row">
+        <span>${chat.title || chat.chatId}</span>
+        ${badge}
+      </div>
+    `;
+
+    li.dataset.id = chat.chatId;
     li.onclick = () => selectChat(chat.chatId, li);
 
     chatListEl.appendChild(li);
@@ -75,24 +85,19 @@ function connectWebSocket(chatId) {
   };
 }
 
-async function sendMessage() {
-  if (!currentChatId) return;
+function sendMessageWs() {
+  if (!currentChatId || !ws) return;
 
   const text = inputEl.value.trim();
   if (!text) return;
 
-  await fetch(`/logged/message?chat_id=${currentChatId}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text })
-  });
-
+  ws.send(text);
   inputEl.value = "";
 }
 
 inputEl.addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
-    sendMessage();
+    sendMessageWs();
   }
 });
 
