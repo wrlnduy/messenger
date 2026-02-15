@@ -83,6 +83,7 @@ func (s *Service) PostMessage(
 		ChatId:    proto.String(chatId.String()),
 		Text:      proto.String(text),
 		Timestamp: timestamppb.New(time.Now()),
+		IsMine:    proto.Bool(false),
 	}
 
 	err := s.storeManager.SaveMessage(ctx, msg)
@@ -111,9 +112,16 @@ func (s *Service) GetHistory(
 		return nil, err
 	}
 
+	markMine(hist.Messages, userId)
+
 	err = s.fillMapping(ctx, hist)
 	if err != nil {
-		log.Printf("Failed filling mapping for user:%q and chat:%q", userId, chatId)
+		log.Printf("Failed filling mapping for user:%q and chat:%q\n", userId, chatId)
+		return nil, err
+	}
+
+	err = s.unread.ResetUnread(ctx, chatId, userId)
+	if err != nil {
 		return nil, err
 	}
 

@@ -43,8 +43,6 @@ func (g *Gateway) RegisterChatRoutes(mux *mux.Router) {
 
 	mux.HandleFunc("/ws", g.serveWS())
 
-	// mux.Handle("/message", g.postMessage())
-
 	mux.HandleFunc("/history", g.history())
 
 	mux.HandleFunc("/chats", g.chats())

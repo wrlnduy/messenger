@@ -12,7 +12,9 @@ message ChatMessage {
     optional string text = 2;
     optional google.protobuf.Timestamp timestamp = 3;
 
-    optional string username = 5;         
+    optional string username = 5;    
+
+    optional bool isMine = 7;     
 }
 
 message ChatHistory {

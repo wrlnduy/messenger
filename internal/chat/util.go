@@ -71,3 +71,13 @@ func (s *Service) validateUser(
 
 	return nil
 }
+
+func markMine(
+	msgs []*chatpb.ChatMessage,
+	userId uuid.UUID,
+) {
+	id := userId.String()
+	for _, msg := range msgs {
+		msg.IsMine = proto.Bool(msg.GetUserId() == id)
+	}
+}
