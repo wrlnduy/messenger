@@ -4,101 +4,17 @@
 <link rel="stylesheet" href="css/style.css">
 <meta charset="utf-8" />
 <title>Messenger</title>
-
-<style>
-body {
-  margin: 0;
-  font-family: sans-serif;
-  display: flex;
-  height: 100vh;
-}
-
-#sidebar {
-  width: 280px;
-  border-right: 1px solid #ddd;
-  overflow-y: auto;
-}
-
-#directCreate {
-  display: flex;
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-}
-
-#directCreate input {
-  flex: 1;
-  padding: 6px;
-}
-
-#directCreate button {
-  margin-left: 5px;
-}
-
-#groupCreate {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-#groupCreate input {
-  padding: 6px;
-}
-
-#groupCreate button {
-  padding: 6px;
-}
-
-#chatList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#chatList li {
-  padding: 15px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
-}
-
-#chatList li:hover {
-  background: #f5f5f5;
-}
-
-#chatList li.active {
-  background: #e3f2fd;
-}
-
-#main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-#messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 15px;
-}
-
-#inputArea {
-  display: flex;
-  padding: 10px;
-  border-top: 1px solid #ddd;
-}
-
-#inputArea input {
-  flex: 1;
-  padding: 10px;
-}
-
-</style>
 </head>
 
 <body>
 
 <div id="sidebar">
+  <div id="logoutContainer" style="padding:10px; border-bottom:1px solid #ddd;">
+    <button id="logoutBtn" style="width:100%; padding:8px; cursor:pointer;">
+      Logout
+    </button>
+  </div>
+
   <div id="directCreate">
     <input id="directInput" placeholder="Start chat with username..." />
     <button id="directBtn">Start</button>

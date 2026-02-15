@@ -32,7 +32,15 @@ async function loadChats() {
     `;
 
     li.dataset.id = chat.chatId;
-    li.onclick = () => selectChat(chat.chatId, li);
+    li.onclick = () => {
+      li.innerHTML = `
+        <div class="chat-row">
+          <span>${chat.title || chat.chatId}</span>
+        </div>
+      `;
+      
+      selectChat(chat.chatId, li);
+    }
 
     chatListEl.appendChild(li);
   });
@@ -66,7 +74,7 @@ async function loadHistory(chatId) {
 
   data.messages.forEach(msg => {
     const username = msg.username || users[msg.userId] || "Unknown";
-    addMessage(username, msg.text, msg.timestamp);
+    addMessage(username, msg.text, msg.timestamp, msg.isMine);
   });
 }
 
@@ -77,7 +85,7 @@ function connectWebSocket(chatId) {
 
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
-    addMessage(msg.username, msg.text, msg.timestamp);
+    addMessage(msg.username, msg.text, msg.timestamp, msg.isMine);
   };
 
   ws.onclose = () => {
@@ -101,8 +109,11 @@ inputEl.addEventListener("keypress", (e) => {
   }
 });
 
-function addMessage(username, text, timestamp) {
+function addMessage(username, text, timestamp, isMine) {
   const div = document.createElement("div");
+  div.classList.add("message");
+
+  div.classList.add(isMine ? "right" : "left");
 
   let timeStr = "";
   if (timestamp) {
@@ -110,7 +121,18 @@ function addMessage(username, text, timestamp) {
     timeStr = ` <span style="color:gray;font-size:12px;">(${ts.toLocaleString()})</span>`;
   }
 
-  div.innerHTML = `<strong>${username}:</strong> ${text}${timeStr}`;
+  if (isMine) {
+    div.innerHTML = `
+      <div>${text}</div>
+      ${timeStr}
+    `;
+  } else {
+    div.innerHTML = `
+      <strong>${username}</strong>
+      <div>${text}</div>
+      ${timeStr}
+    `;
+  }
 
   messagesEl.appendChild(div);
   messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -200,5 +222,18 @@ async function createGroup() {
 }
 
 groupBtn.onclick = createGroup;
+
+document.getElementById("logoutBtn").addEventListener("click", async () => {
+  try {
+    await fetch("/logout", {
+      method: "POST",
+      credentials: "include"
+    });
+
+    window.location.href = "/";
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
+});
 
 loadChats();

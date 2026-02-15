@@ -101,7 +101,7 @@ func (g *Gateway) logoutHandler() http.Handler {
 			Value:    "",
 			Path:     "/",
 			HttpOnly: true,
-			MaxAge:   0,
+			MaxAge:   -1,
 		})
 
 		_, err := g.authClient.Logout(
@@ -120,40 +120,6 @@ func (g *Gateway) logoutHandler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	})
 }
-
-// func (g *Gateway) postMessage() http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		var req struct {
-// 			Text string `json:"text"`
-// 		}
-// 		err := json.NewDecoder(r.Body).Decode(&req)
-// 		if err != nil {
-// 			http.Error(w, err.Error(), http.StatusBadRequest)
-// 			return
-// 		}
-
-// 		chatId, err := requestChatId(r)
-// 		if err != nil {
-// 			http.Error(w, err.Error(), http.StatusBadRequest)
-// 			return
-// 		}
-
-// 		_, err = g.chatClient.PostMessage(
-// 			r.Context(),
-// 			&chatpb.PostMessageRequest{
-// 				ChatId: proto.String(chatId.String()),
-// 				Text:   proto.String(req.Text),
-// 				UserId: contextx.UserWithCtx(r.Context()).UserId,
-// 			},
-// 		)
-// 		if err != nil {
-// 			http.Error(w, err.Error(), http.StatusBadRequest)
-// 			return
-// 		}
-
-// 		w.WriteHeader(http.StatusNoContent)
-// 	}
-// }
 
 func (g *Gateway) history() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -248,5 +214,25 @@ func (g *Gateway) startGroup() http.HandlerFunc {
 		data, _ := protojson.Marshal(chat)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(data)
+	}
+}
+
+func (g *Gateway) index() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		sessionId, ok := cookies.SessionID(r)
+		if ok {
+			_, err := g.authClient.UserBySession(
+				r.Context(),
+				&authpb.UserBySessionRequest{
+					SessionId: proto.String(sessionId.String()),
+				},
+			)
+			if err == nil {
+				http.Redirect(w, r, "/logged", http.StatusSeeOther)
+				return
+			}
+		}
+
+		http.ServeFile(w, r, "./web/index.html")
 	}
 }

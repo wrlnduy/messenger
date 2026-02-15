@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 type Hub struct {
@@ -37,7 +38,13 @@ func (h *Hub) Broadcast(sender uuid.UUID, msg *chatpb.ChatMessage) {
 	h.Lock()
 	defer h.Unlock()
 
-	for _, conn := range h.clients {
+	for id, conn := range h.clients {
+		if id == sender {
+			continue
+		}
 		conn.Send(msg)
 	}
+
+	msg.IsMine = proto.Bool(true)
+	h.clients[sender].Send(msg)
 }

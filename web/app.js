@@ -75,3 +75,17 @@ function checkStatus(res) {
 function showError(err) {
   authError.innerText = err.message;
 }
+
+async function init() {
+  try {
+    const res = await fetch("/logged", { credentials: "include" });
+    if (res.ok) {
+      window.location.href = "/logged";
+      return;
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+init();
