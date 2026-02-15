@@ -1,0 +1,21 @@
+package chatpb;
+
+option go_package = "messenger/proto/chats;chatpb";
+
+import "google/protobuf/timestamp.proto";
+
+message ChatMessage {
+    optional string messageId = 4;
+    optional string chatId = 6;
+
+    optional string userId = 1;
+    optional string text = 2;
+    optional google.protobuf.Timestamp timestamp = 3;
+
+    optional string username = 5;         
+}
+
+message ChatHistory {
+    repeated ChatMessage messages = 1;
+    map<string, string> mapping = 2;
+}

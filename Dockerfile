@@ -7,8 +7,9 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o server ./cmd/server
+ARG SERVICE
+RUN go build -o service ./cmd/${SERVICE}
 
-EXPOSE 8080
+EXPOSE 50051 50052 50053 8080
 
-CMD ["./server"]
+CMD ["./service"]

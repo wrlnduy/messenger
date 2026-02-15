@@ -2,15 +2,16 @@ package auth
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"log"
-	"messenger/internal/sessions"
-	"messenger/internal/users"
+	"messenger/internal/auth/sessions"
+	authpb "messenger/proto/auth"
+	userpb "messenger/proto/users"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -23,30 +24,46 @@ var (
 )
 
 type Service struct {
-	db       *sql.DB
-	users    users.Store
 	sessions sessions.Store
+	cache    *sessions.SessionsCache
+
+	usersClient userpb.UsersServiceClient
 }
 
-func NewService(db *sql.DB, users users.Store, sessions sessions.Store) (*Service, error) {
+func NewService(
+	sessions sessions.Store,
+	cache *sessions.SessionsCache,
+	usersClient userpb.UsersServiceClient,
+) *Service {
 	return &Service{
-		db:       db,
-		users:    users,
-		sessions: sessions,
-	}, nil
+		sessions:    sessions,
+		cache:       cache,
+		usersClient: usersClient,
+	}
 }
 
 func (s *Service) Register(
 	ctx context.Context,
 	username string,
 	password string,
-) error {
+) (*authpb.RegisterResponse, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return s.users.CreateUser(ctx, uuid.New(), username, string(hash))
+	resp, err := s.usersClient.CreateUser(
+		ctx,
+		&userpb.CreateUserRequest{
+			Username:     proto.String(username),
+			PasswordHash: proto.String(string(hash)),
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &authpb.RegisterResponse{UserId: resp.UserId}, nil
 }
 
 func (s *Service) Login(
@@ -54,8 +71,12 @@ func (s *Service) Login(
 	username string,
 	password string,
 ) (uuid.UUID, error) {
-	user, err := s.users.FindByUsername(ctx, username)
-
+	user, err := s.usersClient.FindByUsername(
+		ctx,
+		&userpb.FindByUsernameRequest{
+			Username: proto.String(username),
+		},
+	)
 	if err != nil {
 		return uuid.Nil, ErrInvalidCredentials
 	}
@@ -77,25 +98,28 @@ func (s *Service) Login(
 	return sessionId, nil
 }
 
+func (s *Service) Logout(
+	ctx context.Context,
+	sessionId uuid.UUID,
+) error {
+	return s.sessions.EndSession(ctx, sessionId)
+}
+
 func (s *Service) UserBySession(
 	ctx context.Context,
 	sessionId uuid.UUID,
-) (*users.User, error) {
-	user := new(users.User)
-
+) (*userpb.User, error) {
 	log.Printf("Searching for user by sessionId: %v\n", sessionId)
-	err := s.db.QueryRowContext(
-		ctx,
-		`SELECT u.user_id, u.username, u.is_active, u.is_admin
-		FROM sessions s
-		JOIN users u ON u.user_id = s.user_id
-		WHERE s.session_id = $1`,
-		sessionId,
-	).Scan(&user.UserId, &user.Username, &user.IsActive, &user.IsAdmin)
 
+	userId, err := s.cache.UserByID(ctx, sessionId)
 	if err != nil {
 		return nil, err
 	}
 
-	return user, err
+	return s.usersClient.FindByID(
+		ctx,
+		&userpb.FindByIDRequest{
+			UserId: proto.String(userId.String()),
+		},
+	)
 }

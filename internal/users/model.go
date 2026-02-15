@@ -2,19 +2,15 @@ package users
 
 import (
 	"context"
-	messenger "messenger/proto"
+	userpb "messenger/proto/users"
 
 	"github.com/google/uuid"
 )
 
-type User messenger.User
-
 type Store interface {
-	CreateUser(ctx context.Context, id uuid.UUID, username, passwordHash string) error
+	CreateUser(ctx context.Context, userId uuid.UUID, username, passwordHash string) error
 
-	FindByUsername(ctx context.Context, username string) (*User, error)
+	FindByUsername(ctx context.Context, username string) (*userpb.User, error)
 
-	FindByID(ctx context.Context, id uuid.UUID) (*User, error)
-
-	ApproveUser(ctx context.Context, approval_id uuid.UUID, id uuid.UUID) error
+	FindByID(ctx context.Context, id uuid.UUID) (*userpb.User, error)
 }

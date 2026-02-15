@@ -1,0 +1,46 @@
+package chatpb;
+
+option go_package = "messenger/proto/chats;chatpb";
+
+import "chats/chat_message.proto";
+import "chats/chat.proto";
+import "google/protobuf/empty.proto";
+
+service ChatService {
+    rpc Connect(stream ChatMessage) returns (stream ChatMessage);
+    
+    rpc GetHistory(HistoryRequest) returns (ChatHistory);
+    
+    rpc GetChats(GetChatsRequest) returns (Chats);
+    
+    rpc StartDirect(StartDirectRequest) returns (Chat);
+
+    rpc StartGroup(StartGroupRequest) returns (Chat);
+
+    rpc AddToGroup(AddToGroupRequest) returns (google.protobuf.Empty);
+}
+
+message HistoryRequest {
+    optional string userId = 1;
+    optional string chatId = 2;
+}
+
+message GetChatsRequest {
+    optional string userId = 1;
+}
+
+message StartDirectRequest {
+    optional string userId = 1;
+    optional string buddy = 2; 
+}
+
+message StartGroupRequest {
+    optional string creatorId = 1;
+    optional string title = 2;
+    repeated string usernames = 3;
+}
+
+message AddToGroupRequest {
+    optional string userId = 1;
+    optional string chatId = 2;
+}
