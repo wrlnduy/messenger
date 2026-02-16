@@ -70,7 +70,7 @@ func (c *UserCache) FindByUsername(
 	ctx context.Context,
 	username string,
 ) (*userpb.User, error) {
-	key := fmt.Sprint("username:%v", username)
+	key := fmt.Sprintf("username:%v", username)
 
 	user := &userpb.User{}
 	bytes, err := c.rdb.Get(ctx, key).Bytes()

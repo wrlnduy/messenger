@@ -6,7 +6,8 @@
 ### Развёртывание с Docker Compose
 
 ```bash
-docker-compose up --build
+chmod +x start.sh
+./start.sh
 ```
 
 ### Переменные окружения
