@@ -216,23 +216,3 @@ func (g *Gateway) startGroup() http.HandlerFunc {
 		w.Write(data)
 	}
 }
-
-func (g *Gateway) index() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		sessionId, ok := cookies.SessionID(r)
-		if ok {
-			_, err := g.authClient.UserBySession(
-				r.Context(),
-				&authpb.UserBySessionRequest{
-					SessionId: proto.String(sessionId.String()),
-				},
-			)
-			if err == nil {
-				http.Redirect(w, r, "/logged", http.StatusSeeOther)
-				return
-			}
-		}
-
-		http.ServeFile(w, r, "./web/index.html")
-	}
-}
