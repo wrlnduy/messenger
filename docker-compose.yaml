@@ -1,16 +1,16 @@
 services:
   gateway:
-      build:
-        context: .
-        args:
-          SERVICE: gateway
-      ports:
-        - "8080:8080"
-      env_file:
-        - .env
-      depends_on:
-        - postgres
-        - redis
+    build:
+      context: .
+      args:
+        SERVICE: gateway
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
 
   users-service:
     build:
@@ -37,7 +37,7 @@ services:
     depends_on:
       - postgres
       - redis
-    
+
   chat-service:
     build:
       context: .
@@ -58,26 +58,26 @@ services:
       POSTGRES_USER: messenger
       POSTGRES_PASSWORD: messenger
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U messenger"]
+      test: [ "CMD-SHELL", "pg_isready -U messenger" ]
       interval: 2s
       retries: 10
-  
+
   redis:
     image: redis:8.4-alpine
     container_name: messenger-redis
     ports:
-      - "6379:6379"
+      - "56379:6379"
     volumes:
       - redis-data:/data
     command: redis-server --appendonly yes
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 2s
       retries: 10
 
@@ -98,5 +98,5 @@ services:
 
 volumes:
   pgdata:
-  
+
   redis-data:
