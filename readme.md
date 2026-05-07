@@ -1,5 +1,9 @@
 # Messenger
 
+### Пример работы
+
+[![Демо](preview/img.png)](preview/video.mp4)
+
 ### Требования
 - Docker и Docker Compose
 
